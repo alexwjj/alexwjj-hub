@@ -4,12 +4,13 @@ import { readFile } from 'node:fs/promises'
 import { runInNewContext } from 'node:vm'
 import { webcrypto } from 'node:crypto'
 
-async function browser({ dnt = false, blockedStorage = false, vitals = false } = {}) {
+async function browser({ dnt = false, blockedStorage = false, vitals = false, rootPath = false } = {}) {
   const source = (await readFile(new URL('../sdk/index.js', import.meta.url), 'utf8')).replace('export function', 'function').replaceAll('import.meta.url', '"https://hub.example/sdk/hub.js"')
   const beacons = [], listeners = new Map(), values = new Map()
   const storage = { getItem: k => values.get(k), setItem: (k, v) => values.set(k, v) }
   const context = { URL, Blob, Date, Uint8Array, crypto: webcrypto, navigator: { doNotTrack: dnt ? '1' : '0', sendBeacon: (url, body) => { beacons.push({ url, body }); return true } }, location: { href: 'https://work.example/app?secret=hidden#/dashboard?token=hidden', hostname: 'work.example', pathname: '/app', hash: '#/dashboard?token=hidden' }, matchMedia: () => ({ matches: false }), performance: { getEntriesByType: () => [] }, history: { pushState() {}, replaceState() {} }, setInterval: () => 1, clearInterval() {}, fetch() { throw Error('beacon should handle delivery') } }
   const events = { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name) } }
+  if (rootPath) context.location.pathname = '/'
   context.document = { ...events, hidden: false, readyState: 'complete', referrer: 'https://referrer.example/page?private=1' }
   context.window = { ...events }
   if (vitals) context.PerformanceObserver = class { observe() {} disconnect() {} }
@@ -51,4 +52,10 @@ test('SDK reports zero CLS so the average does not exclude stable pages', async 
   const events = (await b.batches()).flatMap(batch => batch.events)
   assert.equal(events.find(e => e.name === 'cls').value, 0)
   assert.equal(events.filter(e => e.name === 'cls').length, 1)
+})
+
+test('SDK normalizes root-level hash routes without duplicate slashes', async () => {
+  const b = await browser({ rootPath: true })
+  assert.equal((await b.batches())[0].events[0].path, '/dashboard')
+  b.context.sdk.stop()
 })

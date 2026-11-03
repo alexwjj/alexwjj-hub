@@ -4,7 +4,7 @@
 
 - `npm run build`：通过（TypeScript + Vite 生产构建）。
 - `npm ci --registry=https://registry.npmjs.org/`：干净安装通过；锁文件不含内部源。
-- `npm test`：11 项通过，覆盖身份、权限、OAuth、留言、采集聚合与 SDK 隐私。
+- `npm test`：12 项通过，覆盖身份、权限、OAuth、留言、采集聚合与 SDK 隐私。
 - `npm audit --omit=dev`：0 项运行时依赖漏洞。
 - `ego-browser nodejs < scripts/smoke.mjs`：通过。
 - 交互：主题切换与刷新持久化、Claude Code / Codex 手册、Skills 深链、全局搜索与空结果、作品筛选、工具筛选、工作流弹窗与 Esc 关闭、移动端导航。
