@@ -54,7 +54,7 @@ npm run db:import-private
 在站长后台选择项目，就能复制对应接入代码：
 
 ```html
-<script type="module" src="https://alexwjj-hub.vercel.app/sdk/hub.js?project=项目ID"></script>
+<script type="module" src="https://alexwjj-hub.vercel.app/sdk/hub.js?project=项目ID" async></script>
 ```
 
 自定义事件：
@@ -63,9 +63,9 @@ npm run db:import-private
 window.alexHubAnalytics?.track('download_click')
 ```
 
-新网站的 origin 必须添加到该项目 `origins` 中；采集接口拒绝未登记来源。原有作品需要分别加入接入代码后才有真实数据，本项目不会自动修改或部署其他仓库。主站自身已接入，localhost 默认不统计。
+新网站的 origin 必须添加到该项目 `origins` 中；采集接口拒绝未登记来源。原有作品需要分别加入接入代码后才有真实数据，已上线前端的本轮接入记录见 `docs/sdk-integrations.md`；后续新项目仍按相同方式接入。主站自身已接入，localhost 默认不统计。
 
-记录 PV、项目内 UV、会话、前台停留、来源域名、屏幕类别、错误计数和自定义事件，以及浏览器支持时的加载耗时/LCP/CLS。默认遵守 DNT/GPC，不上传查询参数、普通 hash、原始 IP、错误堆栈、表单或 GitHub 身份。事件 ID 去重；采集按来源限流，留言每账号 30 秒一条。UV 按项目计算，跨项目不合并为同一访客。客户端统计可能被拦截或漏记，不用于结算。
+记录 PV、项目内 UV、会话、前台停留、来源域名、屏幕类别、错误计数和自定义事件，以及浏览器支持时的加载耗时/LCP/CLS。默认遵守 DNT/GPC，不上传查询参数、普通 hash、原始 IP、错误堆栈、表单或 GitHub 身份；UUID 和长数字路径段归并为 `:id`。事件 ID 去重；采集按来源限流，留言每账号 30 秒一条。UV 按项目计算，跨项目不合并为同一访客。客户端统计可能被拦截或漏记，不用于结算。
 
 独立包与接入 API 见 [sdk/README.md](sdk/README.md)，可 `npm pack ./sdk` 生成安装包。
 

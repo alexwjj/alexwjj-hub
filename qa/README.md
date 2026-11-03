@@ -4,7 +4,7 @@
 
 - `npm run build`：通过（TypeScript + Vite 生产构建）。
 - `npm ci --registry=https://registry.npmjs.org/`：干净安装通过；锁文件不含内部源。
-- `npm test`：12 项通过，覆盖身份、权限、OAuth、留言、采集聚合与 SDK 隐私。
+- `npm test`：14 项通过，覆盖身份、权限、OAuth、留言、采集聚合与 SDK 隐私。
 - `npm audit --omit=dev`：0 项运行时依赖漏洞。
 - `ego-browser nodejs < scripts/smoke.mjs`：通过。
 - 交互：主题切换与刷新持久化、Claude Code / Codex 手册、Skills 深链、全局搜索与空结果、作品筛选、工具筛选、工作流弹窗与 Esc 关闭、移动端导航。
@@ -15,3 +15,5 @@
 - 独立 Neon 数据库初始化成功，登记 63 条作品记录（21 条仅站长可读）。
 
 检查使用 Chromium 浏览器与模拟视口；未做真实手机、Safari 或 Firefox 验收。外部网站的可用性取决于对应服务。
+
+真实 GitHub 授权登录已通过，站长菜单与 63 条作品清单可见；线上留言发布和删除通过，临时验收留言已删除。主站 SDK 的页面访问、前台停留与性能事件已进入独立 Neon。

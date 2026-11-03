@@ -59,3 +59,12 @@ test('SDK normalizes root-level hash routes without duplicate slashes', async ()
   assert.equal((await b.batches())[0].events[0].path, '/dashboard')
   b.context.sdk.stop()
 })
+
+test("SDK redacts UUID and long numeric path segments", async () => {
+  const b = await browser()
+  b.context.location.hash = "#/people/" + b.context.crypto.randomUUID() + "/1234567"
+  b.context.history.pushState(null, "", "/")
+  const events = (await b.batches()).flatMap(batch => batch.events)
+  assert.equal(events.filter(e => e.type === "pageview").at(-1).path, "/app/people/:id/:id")
+  b.context.sdk.stop()
+})

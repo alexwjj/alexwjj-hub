@@ -12,7 +12,7 @@ export function createHubAnalytics({ projectId, endpoint, respectDNT = true, tra
   const device = matchMedia('(max-width: 600px)').matches ? 'mobile' : matchMedia('(max-width: 1024px)').matches ? 'tablet' : 'desktop'
   let referrer = ''; try { referrer = document.referrer ? new URL(document.referrer).hostname : '' } catch { /* No valid referring site. */ }
   let stopped = false, queue = [], lastPath = '', activeSince = Date.now(), activeMs = 0
-  const cleanPath = () => { const route = location.hash.startsWith('#/') ? location.hash.slice(1).split('?')[0].split('#')[0] : ''; return ((route ? location.pathname.replace(/\/$/, '') + route : location.pathname) || '/').slice(0, 500) }
+  const cleanPath = () => { const route = location.hash.startsWith('#/') ? location.hash.slice(1).split('?')[0].split('#')[0] : ''; return ((route ? location.pathname.replace(/\/$/, '') + route : location.pathname) || '/').replace(/\/[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}(?=\/|$)/gi, '/:id').replace(/\/\d{7,}(?=\/|$)/g, '/:id').slice(0, 500) }
   const enqueue = (type, name, value = 0) => { if (!stopped) { queue.push({ id: uuid(), type, name, value, visitor, session, device, referrer, path: cleanPath() }); if (queue.length >= 20) flush() } }
   function flush() {
     if (!queue.length) return

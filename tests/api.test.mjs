@@ -2,7 +2,7 @@ import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createDatabase, seedProjects } from '../server/db.mjs'
-import { createHandler } from '../server/app.mjs'
+import { createHandler, validateEvents } from '../server/app.mjs'
 import { cookie, seal, session, unseal, authRoute } from '../server/auth.mjs'
 
 const config = { origin: 'https://hub.example', secret: 'a'.repeat(48), clientId: 'test-client', clientSecret: 'test-secret', ownerId: '29943063' }
@@ -100,4 +100,10 @@ test('daily reports use the same Shanghai calendar boundaries as the chart', asy
   const report = await (await handler(req('/api/admin/analytics?project=boundary-test&days=7', { id: config.ownerId }))).json()
   assert.equal(report.summary.views, 1)
   assert.equal(report.daily.reduce((sum, day) => sum + day.views, 0), report.summary.views)
+})
+
+test('collector redacts identifier-shaped paths before storage', () => {
+  const id = randomUUID()
+  const [event] = validateEvents({ events: [{ id: randomUUID(), visitor: randomUUID(), session: randomUUID(), type: 'pageview', name: 'pageview', value: 0, path: `/people/${id}/1234567`, device: 'desktop' }] }, 'test', config.secret)
+  assert.equal(event.path, '/people/:id/:id')
 })

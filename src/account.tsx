@@ -92,7 +92,7 @@ export function OwnerDashboard() {
   const selected = projects.find(p => p.id === projectId)
   const max = Math.max(1, ...(data?.daily.map(d => d.views) || []))
   const chartDays = Array.from({ length: Number(days) }, (_, i) => { const day = new Date(Date.now() + 8 * 3600_000 - (Number(days) - i - 1) * 86400_000).toISOString().slice(0, 10); return data?.daily.find(d => d.day === day) || { day, views: 0, visitors: 0 } })
-  const snippet = `<script type="module" src="${window.location.origin}/sdk/hub.js?project=${selected?.id || '请选择项目'}"></script>`
+  const snippet = `<script type="module" src="${window.location.origin}/sdk/hub.js?project=${selected?.id || '请选择项目'}" async></script>`
   return <><Header eyebrow="OWNER WORKSPACE" title="作品数据，一处看见。">只有你能看到这里。数据来自各作品接入的 SDK，不会展示给访客。</Header>
     <div className="analytics-controls"><label>项目<select value={projectId} onChange={e => { setProjectId(e.target.value); setCopied(false) }}><option value="">全部作品</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.visibility === 'private' ? ' · 私有' : ''}</option>)}</select></label><label>时间<select value={days} onChange={e => setDays(e.target.value)}><option value="7">最近 7 天</option><option value="30">最近 30 天</option><option value="90">最近 90 天</option></select></label><Button variant="outline" size="sm" disabled={busy} onClick={() => setVersion(v => v + 1)}><RefreshCw size={14} />刷新</Button></div>
     {error && <p className="inline-error" role="alert">{error}</p>}

@@ -13,7 +13,7 @@ export function validateEvents(body, projectId, secret) {
     if (!e || !uuid.test(e.id) || !uuid.test(e.visitor) || !uuid.test(e.session) || !eventTypes.has(e.type) || typeof e.name !== 'string' || !/^[a-zA-Z\d_.-]{1,64}$/.test(e.name) || typeof e.path !== 'string' || !e.path.startsWith('/') || e.path.length > 500 || /[?#\u0000-\u001f]/.test(e.path)) throw new Error('Invalid event')
     if (!Number.isFinite(e.value) || e.value < 0 || e.value > 3_600_000) throw new Error('Invalid metric')
     const referrer = typeof e.referrer === 'string' && /^[a-z\d.-]{0,253}$/i.test(e.referrer) ? e.referrer : ''
-    return { ...e, referrer, visitor: hash(`${secret}:${projectId}:${e.visitor}`), session: hash(`${secret}:${projectId}:${e.session}`), device: ['mobile', 'desktop', 'tablet'].includes(e.device) ? e.device : 'desktop' }
+    return { ...e, path: e.path.replace(/\/[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}(?=\/|$)/gi, '/:id').replace(/\/\d{7,}(?=\/|$)/g, '/:id'), referrer, visitor: hash(`${secret}:${projectId}:${e.visitor}`), session: hash(`${secret}:${projectId}:${e.session}`), device: ['mobile', 'desktop', 'tablet'].includes(e.device) ? e.device : 'desktop' }
   })
 }
 
