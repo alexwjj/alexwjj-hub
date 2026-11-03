@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { runInNewContext } from 'node:vm'
 import { webcrypto } from 'node:crypto'
 
-async function browser({ dnt = false, blockedStorage = false } = {}) {
+async function browser({ dnt = false, blockedStorage = false, vitals = false } = {}) {
   const source = (await readFile(new URL('../sdk/index.js', import.meta.url), 'utf8')).replace('export function', 'function').replaceAll('import.meta.url', '"https://hub.example/sdk/hub.js"')
   const beacons = [], listeners = new Map(), values = new Map()
   const storage = { getItem: k => values.get(k), setItem: (k, v) => values.set(k, v) }
@@ -12,6 +12,7 @@ async function browser({ dnt = false, blockedStorage = false } = {}) {
   const events = { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name) } }
   context.document = { ...events, hidden: false, readyState: 'complete', referrer: 'https://referrer.example/page?private=1' }
   context.window = { ...events }
+  if (vitals) context.PerformanceObserver = class { observe() {} disconnect() {} }
   Object.defineProperty(context, 'localStorage', { get() { if (blockedStorage) throw Error('storage denied'); return storage } })
   Object.defineProperty(context, 'sessionStorage', { get() { if (blockedStorage) throw Error('storage denied'); return storage } })
   runInNewContext(source + '\nglobalThis.sdk = createHubAnalytics({projectId:"test",endpoint:"https://hub.example/api/collect"})', context)
@@ -42,4 +43,12 @@ test('SDK respects DNT and survives denied browser storage', async () => {
   const blocked = await browser({ blockedStorage: true })
   assert.equal(blocked.beacons.length, 1)
   blocked.context.sdk.stop()
+})
+
+test('SDK reports zero CLS so the average does not exclude stable pages', async () => {
+  const b = await browser({ vitals: true })
+  b.context.sdk.stop()
+  const events = (await b.batches()).flatMap(batch => batch.events)
+  assert.equal(events.find(e => e.name === 'cls').value, 0)
+  assert.equal(events.filter(e => e.name === 'cls').length, 1)
 })

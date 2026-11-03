@@ -56,6 +56,7 @@ test('guestbook validates login, CSRF, length, persistent writes and deletion ow
   assert.equal((await handler(req('/api/messages', { method: 'POST', body: { content: 'hello' } }))).status, 401)
   assert.equal((await handler(req('/api/messages', { id: '123', method: 'POST', origin: 'https://evil.example', body: { content: 'hello' } }))).status, 403)
   assert.equal((await handler(req('/api/messages', { id: '123', method: 'POST', body: { content: ' '.repeat(5) } }))).status, 400)
+  assert.equal((await handler(new Request(config.origin + '/api/messages', { method: 'POST', headers: { cookie: signedCookie('123'), origin: config.origin }, body: 'null' }))).status, 400)
   const response = await handler(req('/api/messages', { id: '123', method: 'POST', body: { content: '<script>alert(1)</script>' } }))
   assert.equal(response.status, 201)
   const { message } = await response.json()

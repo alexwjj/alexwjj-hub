@@ -20,14 +20,16 @@ export function validateEvents(body, projectId, secret) {
 async function readBody(request) {
   const text = await request.text()
   if (Buffer.byteLength(text) > 24_000) throw new Error('Body too large')
-  return JSON.parse(text)
+  const value = JSON.parse(text)
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid body')
+  return value
 }
 
 export function createHandler({ getDatabase = database, config = configuration(), fetcher = fetch } = {}) {
   return async function handler(request) {
     let response
     try { response = await route(request) } catch (error) {
-      if (error instanceof SyntaxError || ['Body too large', 'Invalid batch', 'Invalid event', 'Invalid metric'].includes(error.message)) response = json({ error: '请求数据无效' }, 400)
+      if (error instanceof SyntaxError || ['Body too large', 'Invalid body', 'Invalid batch', 'Invalid event', 'Invalid metric'].includes(error.message)) response = json({ error: '请求数据无效' }, 400)
       else { console.error('Hub API unavailable:', error.name); response = json({ error: '服务暂不可用，请稍后重试' }, 503) }
     }
     response.headers.set('cache-control', 'no-store')

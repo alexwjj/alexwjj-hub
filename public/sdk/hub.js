@@ -30,15 +30,14 @@ export function createHubAnalytics({ projectId, endpoint, respectDNT = true, tra
   const leave = () => { engagement(); flush() }
   const error = event => { enqueue('error', event.type === 'unhandledrejection' ? 'unhandledrejection' : 'javascript_error'); flush() }
   const load = () => { const nav = performance.getEntriesByType('navigation')[0]; if (nav?.loadEventEnd > 0) enqueue('metric', 'load_ms', Math.min(nav.loadEventEnd, 3_600_000)) }
-  const observers = []; let cls = 0
+  const observers = []; let cls = 0, lcp = 0, clsSupported = false, metricsReported = false
   if (typeof PerformanceObserver !== 'undefined') {
     for (const type of ['largest-contentful-paint', 'layout-shift']) try {
       const observer = new PerformanceObserver(list => { for (const e of list.getEntries()) { if (type === 'layout-shift') { if (!e.hadRecentInput) cls += e.value } else { lcp = e.startTime } } })
-      observer.observe({ type, buffered: true }); observers.push(observer)
+      observer.observe({ type, buffered: true }); observers.push(observer); if (type === 'layout-shift') clsSupported = true
     } catch { /* Unsupported performance entry type. */ }
   }
-  let lcp = 0
-  const finalMetrics = () => { if (lcp) { enqueue('metric', 'lcp_ms', Math.min(lcp, 3_600_000)); lcp = 0 } if (cls) { enqueue('metric', 'cls', cls); cls = 0 } leave() }
+  const finalMetrics = () => { if (!metricsReported) { if (lcp) enqueue('metric', 'lcp_ms', Math.min(lcp, 3_600_000)); if (clsSupported) enqueue('metric', 'cls', cls); metricsReported = true } leave() }
   const originalPush = history.pushState, originalReplace = history.replaceState
   const push = function (...args) { const result = originalPush.apply(this, args); pageview(); return result }
   const replace = function (...args) { const result = originalReplace.apply(this, args); pageview(); return result }
@@ -46,7 +45,8 @@ export function createHubAnalytics({ projectId, endpoint, respectDNT = true, tra
   window.addEventListener('popstate', pageview); window.addEventListener('hashchange', pageview)
   window.addEventListener('error', error); window.addEventListener('unhandledrejection', error)
   window.addEventListener('pagehide', finalMetrics); document.addEventListener('visibilitychange', visibility)
-  if (document.readyState === 'complete') load(); else window.addEventListener('load', load, { once: true })
+  const onLoad = () => setTimeout(load, 0)
+  if (document.readyState === 'complete') load(); else window.addEventListener('load', onLoad, { once: true })
   const timer = setInterval(() => { engagement(); flush() }, 15_000)
   pageview()
   return {
@@ -56,7 +56,7 @@ export function createHubAnalytics({ projectId, endpoint, respectDNT = true, tra
       finalMetrics(); stopped = true; clearInterval(timer); observers.forEach(o => o.disconnect())
       window.removeEventListener('popstate', pageview); window.removeEventListener('hashchange', pageview)
       window.removeEventListener('error', error); window.removeEventListener('unhandledrejection', error)
-      window.removeEventListener('pagehide', finalMetrics); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('load', load)
+      window.removeEventListener('pagehide', finalMetrics); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('load', onLoad)
       if (history.pushState === push) history.pushState = originalPush
       if (history.replaceState === replace) history.replaceState = originalReplace
     },
