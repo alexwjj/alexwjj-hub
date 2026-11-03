@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="俊劫的个人空间：作品、AI 工具、工作流与技术笔记。保持好奇，把想法变成作品。"
+    />
+    <meta name="theme-color" content="#fcfcfa" />
+    <title>俊劫的个人空间 · 作品、工具与工作流</title>
+    <script>
+      try {
+        const theme = localStorage.getItem("alex-theme");
+        if (
+          theme === "dark" ||
+          (theme !== "light" &&
+            matchMedia("(prefers-color-scheme: dark)").matches)
+        )
+          document.documentElement.classList.add("dark");
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/sdk/hub.js?project=alexwjj-hub"></script>
+  </body>
+</html>
