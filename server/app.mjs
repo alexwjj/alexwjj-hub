@@ -51,7 +51,7 @@ export function createHandler({ getDatabase = database, config = configuration()
         const days = Number(url.searchParams.get('days') || 30)
         if (![7, 30, 90].includes(days)) return json({ error: '时间范围无效' }, 400)
         const project = url.searchParams.get('project') || null
-        const filter = `created_at >= now()-$1::int*interval '1 day' AND ($2::text IS NULL OR project_id=$2)`
+        const filter = `created_at >= ((date_trunc('day',now() AT TIME ZONE 'Asia/Shanghai')-($1::int-1)*interval '1 day') AT TIME ZONE 'Asia/Shanghai') AND ($2::text IS NULL OR project_id=$2)`
         const params = [days, project]
         const [summary, daily, pages, events, referrers, devices, metrics, perProject] = await Promise.all([
           db.query(`SELECT count(*) FILTER(WHERE type='pageview')::int AS views,count(DISTINCT visitor) FILTER(WHERE type='pageview')::int AS visitors,count(DISTINCT session_id) FILTER(WHERE type='pageview')::int AS sessions,count(*) FILTER(WHERE type='error')::int AS errors,coalesce(sum(value) FILTER(WHERE type='engagement'),0)::float AS engagement FROM hub_events WHERE ${filter}`, params),

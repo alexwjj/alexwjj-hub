@@ -91,3 +91,13 @@ test('public catalog seed cannot overwrite private repository visibility', async
   assert.equal(p.visibility, 'private')
   assert.equal(p.repo, 'https://github.com/owner/private')
 })
+
+test('daily reports use the same Shanghai calendar boundaries as the chart', async () => {
+  await seedProjects(db, [{ id: 'boundary-test', name: 'Calendar boundary' }])
+  for (const offset of [-1, 1]) await db.query(`INSERT INTO hub_events(id,project_id,type,name,path,visitor,session_id,referrer,device,value,created_at)
+    VALUES($1,'boundary-test','pageview','pageview','/','v','s','','desktop',0,
+    ((date_trunc('day',now() AT TIME ZONE 'Asia/Shanghai')-interval '6 days'+$2::int*interval '1 minute') AT TIME ZONE 'Asia/Shanghai'))`, [randomUUID(), offset])
+  const report = await (await handler(req('/api/admin/analytics?project=boundary-test&days=7', { id: config.ownerId }))).json()
+  assert.equal(report.summary.views, 1)
+  assert.equal(report.daily.reduce((sum, day) => sum + day.views, 0), report.summary.views)
+})
