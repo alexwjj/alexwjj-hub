@@ -2776,3 +2776,48 @@ div.input-shell {
   outline: 1px solid #ffffffb3;
   outline-offset: -1px;
 }
+/* Toolbar fields use inner strokes in the Pencil source, without consuming layout width. */
+.topbar > .desktop-panel-icon {
+  width: 18px;
+  flex: 0 0 18px;
+}
+.topbar-actions > .icon-button {
+  width: 38px;
+  height: 38px;
+}
+.breadcrumb {
+  gap: 16px;
+}
+.search-trigger,
+.background-trigger,
+.theme-controls {
+  border: 0;
+  outline: 1px solid #ffffff80;
+  outline-offset: -1px;
+}
+.capabilities-controls {
+  min-height: 44px;
+}
+.capabilities-controls .segment button {
+  font-size: 13px;
+  height: 28px;
+}
+.capabilities-controls .segment button span {
+  font-size: 11px;
+}
+.route-view[data-route="/resources"] > .section-heading {
+  height: 22px;
+  min-height: 22px;
+}
+.mcp-grid {
+  margin-top: 2px;
+}
+@media (max-width: 900px) {
+  .topbar-actions > .icon-button {
+    width: 25px;
+    height: 30px;
+  }
+  .breadcrumb {
+    gap: 8px;
+  }
+}
