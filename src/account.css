@@ -38,3 +38,4 @@
 .project-picker-option[data-selected] { font-weight:600; }
 .project-picker-empty { padding:20px 10px; text-align:center; color:var(--body-text); font-size:14px; }
 @media(max-width:520px) { .analytics-project-field { flex:0 0 100%; max-width:none; } .analytics-controls > label { flex:1!important; } }
+.project-picker-empty:empty { padding:0; }
