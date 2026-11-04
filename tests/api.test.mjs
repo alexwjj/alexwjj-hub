@@ -10,7 +10,7 @@ const identity = (id = '29943063') => ({ id, login: id === '29943063' ? 'alexwjj
 const signedCookie = id => cookie(config, 'session', seal(identity(id), config.secret), 100).split(';')[0]
 const req = (path, { id, method = 'GET', body, origin = config.origin } = {}) => new Request(config.origin + path, { method, headers: { ...(id ? { cookie: signedCookie(id) } : {}), origin, ...(body ? { 'content-type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
 let db, handler
-before(async () => { db = await createDatabase({ localPath: 'memory://', url: '', production: false }); handler = createHandler({ config, getDatabase: async () => db }); await seedProjects(db, [{ id: 'test-project', name: 'Test', url: 'https://work.example', origins: ['https://work.example'] }]) })
+before(async () => { db = await createDatabase({ localPath: 'memory://', url: '', production: false }); handler = createHandler({ config, getDatabase: async () => db, dashboardProjectIds: ['test-project', 'boundary-test'] }); await seedProjects(db, [{ id: 'test-project', name: 'Test', url: 'https://work.example', origins: ['https://work.example'] }]) })
 after(async () => db?.close())
 
 test('signed sessions reject tampering, expiry and forged owner role', () => {
@@ -106,4 +106,16 @@ test('collector redacts identifier-shaped paths before storage', () => {
   const id = randomUUID()
   const [event] = validateEvents({ events: [{ id: randomUUID(), visitor: randomUUID(), session: randomUUID(), type: 'pageview', name: 'pageview', value: 0, path: `/people/${id}/1234567`, device: 'desktop' }] }, 'test', config.secret)
   assert.equal(event.path, '/people/:id/:id')
+})
+
+
+test('owner dashboard exposes only curated works and rejects archived selections without deleting history', async () => {
+  const curated = createHandler({ config, getDatabase: async () => db })
+  const registry = await (await curated(req('/api/admin/projects', { id: config.ownerId }))).json()
+  assert.equal(registry.projects.length, 9)
+  assert(!registry.projects.some(p => p.id === 'test-project' || p.id === 'private-test'))
+  assert.equal((await curated(req('/api/admin/analytics?project=test-project', { id: config.ownerId }))).status, 400)
+  const report = await (await curated(req('/api/admin/analytics', { id: config.ownerId }))).json()
+  assert(report.perProject.every(row => registry.projects.some(project => project.id === row.project_id)))
+  assert.equal((await db.query('SELECT id FROM hub_projects WHERE id=$1', ['test-project'])).length, 1)
 })

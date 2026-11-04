@@ -2,7 +2,8 @@ import { analyticsSnippet } from './lib/analytics';
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Check, Code2, Copy, Loader2, LogOut, MessageSquare, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, ChevronsUpDown, Check, Code2, Copy, Loader2, LogOut, MessageSquare, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { Combobox } from '@base-ui/react/combobox'
 import { Button } from '@/components/ui/button'
 import './account.css'
 
@@ -76,6 +77,20 @@ function Breakdown({ title, rows }: { title: string; rows: CountRow[] }) {
   return <section className="panel breakdown-panel"><h2>{title}</h2>{rows.length ? rows.map((r, i) => <div className="breakdown-row" key={`${r.path || r.name}-${i}`}><span title={r.path || r.name}>{r.path || r.name || '直接访问'}</span><strong>{r.count.toLocaleString()}</strong></div>) : <p className="data-placeholder small">暂无数据</p>}</section>
 }
 
+function ProjectPicker({ projects, value, onChange }: { projects: RegistryProject[]; value: string; onChange: (id: string) => void }) {
+  const choices = [{ id: '', name: '全部作品' }, ...projects]
+  return <div className="analytics-project-field"><span id="project-picker-label">项目</span>
+    <Combobox.Root items={choices} value={choices.find(p => p.id === value) || choices[0]} onValueChange={item => onChange(item?.id || '')} itemToStringLabel={item => item.name} isItemEqualToValue={(a, b) => a.id === b.id} filter={(item, query) => `${item.name} ${item.id}`.toLowerCase().includes(query.trim().toLowerCase())}>
+      <Combobox.Trigger className="project-picker-trigger" aria-labelledby="project-picker-label"><Combobox.Value /><ChevronsUpDown size={16}/></Combobox.Trigger>
+      <Combobox.Portal><Combobox.Positioner sideOffset={6} className="project-picker-positioner"><Combobox.Popup className="project-picker-popup">
+        <Combobox.Input className="project-picker-search" aria-label="搜索作品项目" placeholder="搜索作品名称或项目 ID…" />
+        <Combobox.Empty className="project-picker-empty">没有找到匹配的作品</Combobox.Empty>
+        <Combobox.List className="project-picker-list">{(item: { id: string; name: string }) => <Combobox.Item key={item.id} value={item} className="project-picker-option"><span>{item.name}</span><Combobox.ItemIndicator><Check size={16}/></Combobox.ItemIndicator></Combobox.Item>}</Combobox.List>
+      </Combobox.Popup></Combobox.Positioner></Combobox.Portal>
+    </Combobox.Root>
+  </div>
+}
+
 export function OwnerDashboard() {
   const { user, loading } = useAuth()
   const [days, setDays] = useState('30'), [projectId, setProjectId] = useState('')
@@ -95,7 +110,7 @@ export function OwnerDashboard() {
   const chartDays = Array.from({ length: Number(days) }, (_, i) => { const day = new Date(Date.now() + 8 * 3600_000 - (Number(days) - i - 1) * 86400_000).toISOString().slice(0, 10); return data?.daily.find(d => d.day === day) || { day, views: 0, visitors: 0 } })
   const snippet = analyticsSnippet(selected?.id || '')
   return <><Header eyebrow="OWNER WORKSPACE" title="作品数据，一处看见。">只有你能看到这里。数据来自各作品接入的 SDK，不会展示给访客。</Header>
-    <div className="analytics-controls"><label>项目<select value={projectId} onChange={e => { setProjectId(e.target.value); setCopied(false) }}><option value="">全部作品</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.visibility === 'private' ? ' · 私有' : ''}</option>)}</select></label><label>时间<select value={days} onChange={e => setDays(e.target.value)}><option value="7">最近 7 天</option><option value="30">最近 30 天</option><option value="90">最近 90 天</option></select></label><Button variant="outline" size="sm" disabled={busy} onClick={() => setVersion(v => v + 1)}><RefreshCw size={14} />刷新</Button></div>
+    <div className="analytics-controls"><ProjectPicker projects={projects} value={projectId} onChange={id => { setProjectId(id); setCopied(false) }} /><label>时间<select value={days} onChange={e => setDays(e.target.value)}><option value="7">最近 7 天</option><option value="30">最近 30 天</option><option value="90">最近 90 天</option></select></label><Button variant="outline" size="sm" disabled={busy} onClick={() => setVersion(v => v + 1)}><RefreshCw size={14} />刷新</Button></div>
     {error && <p className="inline-error" role="alert">{error}</p>}
     {busy && <p className="data-loading" role="status">正在读取作品数据…</p>}
     {data && <><div className="stats-grid">{[{ name: '浏览量 PV', value: data.summary.views }, { name: '独立访客 UV', value: data.summary.visitors }, { name: '访问会话', value: data.summary.sessions }, { name: '平均前台停留', value: `${Math.round(data.summary.engagement / Math.max(1, data.summary.sessions) / 1000)}s` }, { name: 'JS 错误', value: data.summary.errors }].map(s => <section className="panel stat-card" key={s.name}><span>{s.name}</span><strong>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</strong></section>)}</div>

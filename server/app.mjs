@@ -1,3 +1,4 @@
+import catalog from '../src/content/projects.json' with { type: 'json' }
 import { createHash } from 'node:crypto'
 import { authRoute, configuration, sameOrigin, session } from './auth.mjs'
 import { database, rateLimit } from './db.mjs'
@@ -25,7 +26,7 @@ async function readBody(request) {
   return value
 }
 
-export function createHandler({ getDatabase = database, config = configuration(), fetcher = fetch } = {}) {
+export function createHandler({ getDatabase = database, config = configuration(), fetcher = fetch, dashboardProjectIds = catalog.map(p => p.id) } = {}) {
   return async function handler(request) {
     let response
     try { response = await route(request) } catch (error) {
@@ -46,13 +47,17 @@ export function createHandler({ getDatabase = database, config = configuration()
       if (!user.isOwner) return json({ error: '仅站点所有者可访问' }, 403)
       if (request.method !== 'GET') return json({ error: '不支持的操作' }, 405)
       const db = await getDatabase()
-      if (path === '/api/admin/projects') return json({ projects: await db.query('SELECT id,name,url,repo,visibility,origins FROM hub_projects ORDER BY name') })
+      if (path === '/api/admin/projects') {
+        const rows = await db.query('SELECT id,name,url,repo,visibility,origins FROM hub_projects WHERE id=ANY($1::text[])', [dashboardProjectIds])
+        return json({ projects: dashboardProjectIds.map(id => rows.find(row => row.id === id)).filter(Boolean) })
+      }
       if (path === '/api/admin/analytics') {
         const days = Number(url.searchParams.get('days') || 30)
         if (![7, 30, 90].includes(days)) return json({ error: '时间范围无效' }, 400)
         const project = url.searchParams.get('project') || null
-        const filter = `created_at >= ((date_trunc('day',now() AT TIME ZONE 'Asia/Shanghai')-($1::int-1)*interval '1 day') AT TIME ZONE 'Asia/Shanghai') AND ($2::text IS NULL OR project_id=$2)`
-        const params = [days, project]
+        if (project && !dashboardProjectIds.includes(project)) return json({ error: '该作品不在当前清单中' }, 400)
+        const filter = `created_at >= ((date_trunc('day',now() AT TIME ZONE 'Asia/Shanghai')-($1::int-1)*interval '1 day') AT TIME ZONE 'Asia/Shanghai') AND ($2::text IS NULL OR project_id=$2) AND project_id=ANY($3::text[])`
+        const params = [days, project, dashboardProjectIds]
         const [summary, daily, pages, events, referrers, devices, metrics, perProject] = await Promise.all([
           db.query(`SELECT count(*) FILTER(WHERE type='pageview')::int AS views,count(DISTINCT visitor) FILTER(WHERE type='pageview')::int AS visitors,count(DISTINCT session_id) FILTER(WHERE type='pageview')::int AS sessions,count(*) FILTER(WHERE type='error')::int AS errors,coalesce(sum(value) FILTER(WHERE type='engagement'),0)::float AS engagement FROM hub_events WHERE ${filter}`, params),
           db.query(`SELECT to_char(created_at AT TIME ZONE 'Asia/Shanghai','YYYY-MM-DD') AS day,count(*) FILTER(WHERE type='pageview')::int AS views,count(DISTINCT visitor) FILTER(WHERE type='pageview')::int AS visitors FROM hub_events WHERE ${filter} GROUP BY day ORDER BY day`, params),
