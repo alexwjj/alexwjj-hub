@@ -2842,3 +2842,24 @@ body,
 .dark .tool-detail-card > p {
   color: var(--body-text);
 }
+.topbar {
+  background: #ffffff7a;
+}
+.status-front,
+.status-back {
+  border-radius: 28px;
+}
+.status-back {
+  background: #ffffff29;
+  outline-color: #ffffff9e;
+}
+.nav-item.selected {
+  background: #ffffff80;
+}
+.dark .status-back {
+  background: #1d202729;
+}
+.dark .topbar,
+.dark .nav-item.selected {
+  background: var(--glass-fill);
+}
