@@ -1217,6 +1217,7 @@ function Shell() {
     }
   });
   const [discoverCount, setDiscoverCount] = useState(2);
+  const [accountError, setAccountError] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -1229,6 +1230,22 @@ function Shell() {
     [mobileOpen, setMobileOpen] = useState(false),
     [accountOpen, setAccountOpen] = useState(false);
   const { appearance, setAppearance } = useAppearance();
+  useEffect(() => {
+    if (!accountOpen) return;
+    const close = (e: PointerEvent) => {
+      if (e.target instanceof Element && !e.target.closest(".account-row"))
+        setAccountOpen(false);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAccountOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [accountOpen]);
   const current = navigation.find((n) =>
     n.to === "/"
       ? location.pathname === "/"
@@ -1360,7 +1377,11 @@ function Shell() {
           <button
             className="icon-button ml-auto"
             aria-label="账户菜单"
-            onClick={() => setAccountOpen((v) => !v)}
+            aria-expanded={accountOpen}
+            onClick={() => {
+              setAccountError("");
+              setAccountOpen((v) => !v);
+            }}
           >
             <Icon name="chevrons" size={13} />
           </button>
@@ -1377,11 +1398,18 @@ function Shell() {
                   )}
                   <button
                     onClick={() =>
-                      void logout().then(() => setAccountOpen(false))
+                      void logout()
+                        .then(() => setAccountOpen(false))
+                        .catch(() => setAccountError("退出失败，请稍后重试"))
                     }
                   >
                     退出登录
                   </button>
+                  {accountError && (
+                    <p className="text-[11px] text-destructive" role="alert">
+                      {accountError}
+                    </p>
+                  )}
                 </>
               ) : (
                 <a href="/api/auth/login">GitHub 登录</a>

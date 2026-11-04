@@ -338,7 +338,13 @@ export function Guestbook() {
           <p>这里还很安静。分享一个想法，或先打个招呼。</p>
           <button
             className="text-link mt-5"
-            onClick={() => document.getElementById("message")?.focus()}
+            onClick={() => {
+              if (!user) {
+                window.location.assign("/api/auth/login");
+                return;
+              }
+              document.getElementById("message")?.focus();
+            }}
           >
             写下第一条留言
             <Icon name="arrow" size={13} />
