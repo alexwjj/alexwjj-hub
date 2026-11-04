@@ -1,191 +1,151 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-// One optical layer under native DOM content; no text or interaction is rasterized.
-const vertex = `attribute vec2 position;
-void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
-const fragment = `precision mediump float;
-uniform vec2 viewport;
-uniform float pixelRatio;
-uniform float lightTheme;
-uniform vec2 pointer;
-uniform vec4 surface;
-uniform float radius;
-uniform float isSurface;
+const namespace = "http://www.w3.org/2000/svg";
+const surfaceSelector = '.sidebar, .panel, .tool-shortcut, .project-card, .website-item, .social-links > a, .message-card, .search-trigger, [data-slot="button"], [data-slot="tabs-list"], .theme-controls';
+const interactiveSelector = 'button:not(:disabled), a[data-slot="button"], .tool-shortcut, .main-nav a';
 
-vec3 scene(vec2 point) {
-  vec2 uv = point / viewport;
-  vec2 p = (uv - 0.5) * vec2(viewport.x / viewport.y, 1.0);
-  float ellipse = length((p - vec2(0.52, -0.02)) / vec2(0.82, 0.61));
-  float sweep = exp(-pow((ellipse - 1.0) * 9.0, 2.0));
-  float rim = exp(-pow((ellipse - 0.94) * 90.0, 2.0));
-  float second = length((p + vec2(0.52, 0.52)) / vec2(0.93, 0.67));
-  float glow = exp(-pow((second - 1.0) * 6.0, 2.0));
-  float shade = 0.014 + sweep * 0.06 + rim * 0.075 + glow * 0.027;
-  float light = 0.9 + sweep * 0.045 + rim * 0.03 - glow * 0.045;
-  return vec3(mix(shade, light, lightTheme));
-}
-float roundedBox(vec2 p, vec2 halfSize, float r) {
-  vec2 q = abs(p) - halfSize + r;
-  return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
-}
-void main() {
-  vec2 point = vec2(gl_FragCoord.x, viewport.y * pixelRatio - gl_FragCoord.y) / pixelRatio;
-  vec3 color = vec3(lightTheme);
-  if (isSurface > 0.5) {
-    vec2 halfSize = surface.zw * 0.5;
-    vec2 local = point - surface.xy - halfSize;
-    float distance = roundedBox(local, halfSize, radius);
-    if (distance > 1.0) discard;
-    vec2 normal = normalize(vec2(
-      roundedBox(local + vec2(0.6, 0.0), halfSize, radius) - roundedBox(local - vec2(0.6, 0.0), halfSize, radius),
-      roundedBox(local + vec2(0.0, 0.6), halfSize, radius) - roundedBox(local - vec2(0.0, 0.6), halfSize, radius)) + vec2(0.0001));
-    float lens = exp(-max(-distance, 0.0) / 14.0);
-    vec2 refracted = point - normal * lens * 26.0;
-    color = scene(refracted);
-    vec2 lightDirection = normalize(pointer - point + vec2(0.01));
-    float specular = pow(max(dot(normal, lightDirection), 0.0), 5.0);
-    float edge = exp(-abs(distance + 1.2) * 0.9);
-    color += (0.055 + specular * 0.21) * edge;
-    color += lens * mix(0.017, 0.025, lightTheme);
+// A rounded lens displacement map. It is generated in element coordinates,
+// so the browser compositor moves the glass and its content together on scroll.
+function lensMap(width: number, height: number, radius: number) {
+  const scale = Math.min(1.5, 420 / Math.max(width, height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  const pixels = context.createImageData(canvas.width, canvas.height);
+  const bevel = Math.min(22, height * 0.3, radius * 0.85);
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const px = (x + 0.5) / scale - width / 2;
+      const py = (y + 0.5) / scale - height / 2;
+      const qx = Math.abs(px) - width / 2 + radius;
+      const qy = Math.abs(py) - height / 2 + radius;
+      const ax = Math.max(qx, 0), ay = Math.max(qy, 0);
+      const length = Math.hypot(ax, ay);
+      const depth = -(length + Math.min(Math.max(qx, qy), 0) - radius);
+      const strength = depth >= 0 ? Math.pow(Math.max(0, 1 - depth / Math.max(bevel, 1)), 2) : 0;
+      const nx = length > 0 ? ax / length * Math.sign(px) : qx > qy ? Math.sign(px) : 0;
+      const ny = length > 0 ? ay / length * Math.sign(py) : qy >= qx ? Math.sign(py) : 0;
+      const index = (y * canvas.width + x) * 4;
+      pixels.data[index] = Math.round(127.5 - 127.5 * nx * strength);
+      pixels.data[index + 1] = Math.round(127.5 - 127.5 * ny * strength);
+      pixels.data[index + 2] = 128;
+      pixels.data[index + 3] = 255;
+    }
   }
-  gl_FragColor = vec4(color, 1.0);
-}`;
-
-const surfaces = ".sidebar, .tool-shortcut, .panel, .project-card, .tool-detail-card, .website-item, .reading-links > a, .social-links > a, .message-card";
+  context.putImageData(pixels, 0, 0);
+  return canvas.toDataURL();
+}
 
 export function LiquidGlass() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [generation, setGeneration] = useState(0);
+  const definitions = useRef<SVGDefsElement>(null);
   useEffect(() => {
-    const canvas = canvasRef.current!;
-    const gl = canvas.getContext("webgl", { alpha: false, antialias: false, depth: false, powerPreference: "low-power" });
-    if (!gl) return; // The CSS glass treatment also works without WebGL.
-    let contextWasLost = false;
-    const shaders: WebGLShader[] = [];
-    const program = gl.createProgram();
-    const buffer = gl.createBuffer();
-    if (!program || !buffer) return;
-    const compile = (type: number, source: string) => {
-      const shader = gl.createShader(type);
-      if (!shader) return false;
-      shaders.push(shader);
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return false;
-      gl.attachShader(program, shader);
-      return true;
-    };
-    const dispose = () => {
-      if (contextWasLost) return; // Context loss already released these GPU resources.
-      gl.deleteBuffer(buffer);
-      gl.deleteProgram(program);
-      shaders.forEach(shader => gl.deleteShader(shader));
-    };
-    if (!compile(gl.VERTEX_SHADER, vertex) || !compile(gl.FRAGMENT_SHADER, fragment)) { dispose(); return; }
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) { dispose(); return; }
-    gl.useProgram(program);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, "position");
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    const uniforms = Object.fromEntries(["viewport", "pixelRatio", "lightTheme", "pointer", "surface", "radius", "isSurface"].map(name => [name, gl.getUniformLocation(program, name)]));
+    const defs = definitions.current!;
+    let nextId = 0;
     let frame = 0;
     let disposed = false;
-    let items: Element[] = [];
-    let needsMeasure = true;
-    let pointer = [innerWidth * 0.35, -innerHeight * 0.2];
+    const filters = new Map<string, string>();
+    const elements = new Set<HTMLElement>();
+    const animations = new Map<HTMLElement, Animation>();
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-    const schedule = () => {
-      if (!disposed && !contextWasLost && !document.hidden && !gl.isContextLost() && !frame) frame = requestAnimationFrame(draw);
+    // URL backdrop filters are a progressive enhancement. Unsupported browsers
+    // keep the ordinary blur, highlights and native, accessible controls.
+    const svgBackdrop = CSS.supports('backdrop-filter', 'url("#glass-probe")') && /Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
+    const node = (tag: string, attributes: Record<string, string>) => {
+      const element = document.createElementNS(namespace, tag);
+      for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+      return element;
     };
-    const resizeObserver = new ResizeObserver(schedule);
-    const draw = () => {
+    const applyLens = (element: HTMLElement) => {
+      if (!svgBackdrop) return;
+      const width = element.offsetWidth, height = element.offsetHeight;
+      if (!width || !height) return;
+      const radius = Math.min(parseFloat(getComputedStyle(element).borderTopLeftRadius) || 16, width / 2, height / 2);
+      const key = `${width}:${height}:${radius}`;
+      let id = filters.get(key);
+      if (!id) {
+        const map = lensMap(width, height, radius);
+        if (!map) return;
+        id = `hub-lens-${++nextId}`;
+        const filter = node('filter', { id, x: '0', y: '0', width: `${width}`, height: `${height}`, filterUnits: 'userSpaceOnUse', 'color-interpolation-filters': 'sRGB' });
+        filter.append(node('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: height < 90 ? '0.5' : '3', result: 'backdrop' }));
+        filter.append(node('feImage', { href: map, x: '0', y: '0', width: `${width}`, height: `${height}`, preserveAspectRatio: 'none', result: 'lens' }));
+        const displacement = (scale: number, result: string) => node('feDisplacementMap', { in: 'backdrop', in2: 'lens', scale: `${scale}`, xChannelSelector: 'R', yChannelSelector: 'G', result });
+        filter.append(displacement(height < 90 ? 20 : 16, 'refract'));
+        defs.append(filter);
+        filters.set(key, id);
+      }
+      element.style.setProperty('--glass-backdrop', `url("#${id}") saturate(1.12)`);
+      element.dataset.glass = 'lens';
+    };
+    const resize = new ResizeObserver(entries => entries.forEach(entry => applyLens(entry.target as HTMLElement)));
+    const refresh = () => {
       frame = 0;
-      if (disposed || contextWasLost || gl.isContextLost()) return;
-      const width = innerWidth;
-      const height = innerHeight;
-      // Bound the backing buffer on retina/4K displays, including desktop zoom.
-      const ratio = Math.min(devicePixelRatio || 1, 1.5, 2400 / Math.max(width, height));
-      const backingWidth = Math.round(width * ratio);
-      const backingHeight = Math.round(height * ratio);
-      if (canvas.width !== backingWidth || canvas.height !== backingHeight) {
-        canvas.width = backingWidth;
-        canvas.height = backingHeight;
-      }
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(uniforms.viewport, width, height);
-      gl.uniform1f(uniforms.pixelRatio, ratio);
-      gl.uniform1f(uniforms.lightTheme, document.documentElement.classList.contains("dark") ? 0 : 1);
-      gl.uniform2f(uniforms.pointer, pointer[0], pointer[1]);
-      gl.disable(gl.SCISSOR_TEST);
-      gl.uniform1f(uniforms.isSurface, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (needsMeasure) {
-        resizeObserver.disconnect();
-        items = [...document.querySelectorAll(surfaces)];
-        items.forEach(item => resizeObserver.observe(item));
-        needsMeasure = false;
-      }
-      gl.enable(gl.SCISSOR_TEST);
-      gl.uniform1f(uniforms.isSurface, 1);
-      for (const item of items) {
-        const box = item.getBoundingClientRect();
-        if (!box.width || !box.height || box.bottom <= 0 || box.top >= height || box.right <= 0 || box.left >= width) continue;
-        const left = Math.max(0, Math.floor(box.left * ratio));
-        const bottom = Math.max(0, Math.floor((height - box.bottom) * ratio));
-        const right = Math.min(canvas.width, Math.ceil(box.right * ratio));
-        const top = Math.min(canvas.height, Math.ceil((height - box.top) * ratio));
-        gl.scissor(left, bottom, Math.max(0, right - left), Math.max(0, top - bottom));
-        const radius = Math.min(parseFloat(getComputedStyle(item).borderTopLeftRadius) || 0, box.width / 2, box.height / 2);
-        gl.uniform4f(uniforms.surface, box.left, box.top, box.width, box.height);
-        gl.uniform1f(uniforms.radius, radius);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-      }
-      canvas.dataset.renderer = "webgl";
+      if (disposed) return;
+      const current = new Set(document.querySelectorAll<HTMLElement>(surfaceSelector));
+      for (const element of elements) if (!current.has(element)) { resize.unobserve(element); elements.delete(element); }
+      for (const element of current) if (!elements.has(element)) { elements.add(element); resize.observe(element); }
+      // Keep only filters still referenced by mounted elements after route changes.
+      const used = new Set([...elements].map(element => element.style.getPropertyValue('--glass-backdrop')));
+      if (filters.size > 80) for (const [key, id] of filters) if (![...used].some(value => value.includes(`#${id}\"`))) { defs.querySelector(`#${id}`)?.remove(); filters.delete(key); }
     };
-    const mutations = new MutationObserver(() => { needsMeasure = true; schedule(); });
-    mutations.observe(document.getElementById("root")!, { childList: true, subtree: true });
-    const theme = new MutationObserver(schedule);
-    theme.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    const onPointer = (event: PointerEvent) => {
-      if (event.pointerType !== "mouse" || reducedMotion.matches) return;
-      pointer = [event.clientX, event.clientY];
-      schedule();
+    const mutations = new MutationObserver(records => {
+      if (!frame && records.some(record => !(record.target instanceof Element && record.target.closest('.glass-definitions')))) frame = requestAnimationFrame(refresh);
+    });
+    mutations.observe(document.getElementById('root')!, { childList: true, subtree: true });
+    const interactive = (target: EventTarget | null) => target instanceof Element ? target.closest<HTMLElement>(interactiveSelector) : null;
+    const animate = (element: HTMLElement, keyframes: Keyframe[], duration: number, hold = false) => {
+      animations.get(element)?.cancel();
+      const animation = element.animate(keyframes, { duration, fill: 'forwards', easing: 'linear' });
+      animations.set(element, animation);
+      animation.finished.then(() => { if (!hold && animations.get(element) === animation) { animation.cancel(); animations.delete(element); } }).catch(() => {});
     };
-    const lost = (event: Event) => {
-      event.preventDefault();
-      contextWasLost = true;
-      cancelAnimationFrame(frame);
-      frame = 0;
-      delete canvas.dataset.renderer;
+    let pressed: HTMLElement | null = null;
+    const down = (event: PointerEvent) => {
+      if (reducedMotion.matches || event.button !== 0) return;
+      pressed = interactive(event.target);
+      if (pressed) animate(pressed, [{ scale: '1' }, { scale: '.96 1.035' }], 95, true);
     };
-    const restored = () => setGeneration(value => value + 1);
-    canvas.addEventListener("webglcontextlost", lost);
-    canvas.addEventListener("webglcontextrestored", restored);
-    window.addEventListener("resize", schedule);
-    document.addEventListener("transitionend", schedule, true);
-    window.addEventListener("scroll", schedule, { passive: true, capture: true });
-    window.addEventListener("pointermove", onPointer, { passive: true });
-    document.addEventListener("visibilitychange", schedule);
-    schedule();
+    const release = () => {
+      if (!pressed) return;
+      const element = pressed;
+      pressed = null;
+      if (reducedMotion.matches) return;
+      // Analytic damped oscillation: a short squash, overshoot, then rest.
+      const frames = Array.from({ length: 31 }, (_, i) => {
+        const t = i / 30 * 0.64;
+        const spring = Math.exp(-9 * t) * Math.cos(21 * t);
+        return { offset: i / 30, scale: `${1 - 0.04 * spring} ${1 + 0.035 * spring}` };
+      });
+      frames[frames.length - 1] = { offset: 1, scale: '1 1' };
+      animate(element, frames, 640);
+    };
+    const move = (event: PointerEvent) => {
+      if (reducedMotion.matches || event.pointerType !== 'mouse') return;
+      const element = interactive(event.target);
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      element.style.setProperty('--glass-pointer-x', `${(event.clientX - rect.left) / rect.width * 100}%`);
+      element.style.setProperty('--glass-pointer-y', `${(event.clientY - rect.top) / rect.height * 100}%`);
+    };
+    document.addEventListener('pointerdown', down);
+    document.addEventListener('pointerup', release);
+    document.addEventListener('pointercancel', release);
+    window.addEventListener('blur', release);
+    document.addEventListener('pointermove', move, { passive: true });
+    refresh();
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
-      resizeObserver.disconnect();
-      mutations.disconnect();
-      theme.disconnect();
-      canvas.removeEventListener("webglcontextlost", lost);
-      canvas.removeEventListener("webglcontextrestored", restored);
-      window.removeEventListener("resize", schedule);
-      document.removeEventListener("transitionend", schedule, true);
-      window.removeEventListener("scroll", schedule, true);
-      window.removeEventListener("pointermove", onPointer);
-      document.removeEventListener("visibilitychange", schedule);
-      dispose();
-      delete canvas.dataset.renderer;
+      mutations.disconnect(); resize.disconnect();
+      animations.forEach(animation => animation.cancel());
+      document.removeEventListener('pointerdown', down); document.removeEventListener('pointerup', release);
+      document.removeEventListener('pointercancel', release); window.removeEventListener('blur', release);
+      document.removeEventListener('pointermove', move);
+      for (const element of elements) { element.style.removeProperty('--glass-backdrop'); delete element.dataset.glass; }
+      defs.replaceChildren();
     };
-  }, [generation]);
-  return <canvas ref={canvasRef} className="liquid-scene" aria-hidden="true" />;
+  }, []);
+  return <svg className="glass-definitions" width="0" height="0" aria-hidden="true"><defs ref={definitions}/></svg>;
 }

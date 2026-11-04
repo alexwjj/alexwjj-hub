@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   HashRouter,
   Link,
@@ -7,12 +7,11 @@ import {
   Routes,
   useLocation,
   useNavigate,
-  useParams,
+  Navigate,
 } from "react-router-dom";
 import {
   BarChart3,
   MessageSquare,
-  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
@@ -21,7 +20,6 @@ import {
   ChevronRight,
   CircleHelp,
   Code2,
-  Copy,
   FileText,
   GitBranch,
   Layers3,
@@ -49,7 +47,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -57,15 +55,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  articles,
   profile,
   projects,
-  prompt,
   tools,
   websites,
   workflows,
 } from "./data";
-import type { Entry, ManualTab, Project, ToolId } from "./data";
+import type { Project, ToolId } from "./data";
+import { resources } from "./content/resources";
+import type { Resource, ResourceKind } from "./content/resources";
 import "./styles.css";
 import { LiquidGlass } from "./LiquidGlass";
 import { AccountButton, AuthProvider, Guestbook, OwnerDashboard, useAuth } from "./account";
@@ -90,18 +88,11 @@ const publicNavigation = [
   { to: "/projects", name: "作品", icon: Layers3, en: "Projects" },
   { to: "/workflows", name: "工作流", icon: Workflow, en: "Workflows" },
   { to: "/tools", name: "工具箱", icon: Boxes, en: "Toolbox" },
-  { to: "/articles", name: "文章", icon: FileText, en: "Writing" },
+  { to: "/resources", name: "能力库", icon: Sparkles, en: "Skills & MCP" },
   { to: "/guestbook", name: "留言", icon: MessageSquare, en: "Guestbook" },
   { to: "/about", name: "关于", icon: CircleHelp, en: "About" },
 ];
 function navigationFor(owner: boolean) { return owner ? [...publicNavigation, { to: "/admin", name: "作品数据", icon: BarChart3, en: "Analytics" }] : publicNavigation; }
-
-const manualTabs: { id: ManualTab; name: string }[] = [
-  { id: "usage", name: "使用方法" },
-  { id: "plugins", name: "Plugins" },
-  { id: "mcp", name: "MCP" },
-  { id: "skills", name: "Skills" },
-];
 
 function OutLink({
   href,
@@ -238,128 +229,19 @@ function TerminalIllustration() {
   );
 }
 
-function CopyPrompt() {
-  const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(prompt);
-          setCopied(true);
-          setFailed(false);
-          timer.current = setTimeout(() => setCopied(false), 2000);
-        } catch {
-          setFailed(true);
-        }
-      }}
-    >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-      {failed ? "复制失败，请手动选择" : copied ? "已复制" : "复制任务模板"}
-    </Button>
-  );
-}
-
-function ManualCard() {
-  const [selected, setSelected] = useState("claude");
-  const [tab, setTab] = useState<ManualTab>("usage");
-  const tool = tools.find((t) => t.id === selected)!;
-  const content: Record<ManualTab, { title: string; text: string }> = {
-    usage: {
-      title: "让 AI 理解你的工作方式",
-      text: "从项目上下文、任务拆解到结果验证，把零散的使用经验整理成可以复用的方法。",
-    },
-    plugins: {
-      title: "把常用能力，组合在一起",
-      text:
-        selected === "claude"
-          ? "Superpowers、Claude Mem、Skill Creator…整理扩展的用途，以及它们在工作流中的位置。"
-          : "记录当前可用的插件入口，让代码、设计与文档工作在同一个上下文中衔接。",
-    },
-    mcp: {
-      title: "让 AI 连接真实的工具",
-      text: "连接浏览器、设计画布与创作工具。按场景理解工具的用途，再按需组合。",
-    },
-    skills: {
-      title: "让好方法，能够重复使用",
-      text: "把代码开发、研究写作和知识整理中的经验，沉淀成有输入、有步骤、有验收的技能。",
-    },
-  };
-  return (
-    <section className="panel manual-panel">
-      <div className="panel-heading">
-        <span className="panel-icon">
-          <BookOpen size={19} />
-        </span>
-        <div>
-          <h2>AI 配置手册</h2>
-          <p>工具不只是安装，更是自己的使用方式。</p>
-        </div>
-        <Badge variant="outline" className="subtle-badge">
-          持续整理
-        </Badge>
-      </div>
-      <Tabs value={selected} onValueChange={setSelected} className="agent-tabs">
-        <TabsList>
-          <TabsTrigger value="claude">
-            <ToolLogo id="claude" small />
-            Claude Code
-          </TabsTrigger>
-          <TabsTrigger value="codex">
-            <ToolLogo id="codex" small />
-            Codex
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as ManualTab)}
-        className="manual-tabs"
-      >
-        <TabsList>
-          {manualTabs.map((t) => (
-            <TabsTrigger key={t.id} value={t.id}>
-              {t.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {manualTabs.map((t) => (
-          <TabsContent value={t.id} key={t.id}>
-            <div className="manual-content">
-              <div>
-                <h3>{content[t.id].title}</h3>
-                <p>{content[t.id].text}</p>
-                <Link
-                  to={`/tools/${tool.id}?tab=${t.id}`}
-                  className="text-link strong"
-                >
-                  查看手册 <ArrowUpRight size={15} />
-                </Link>
-              </div>
-              <div className="manual-glyph" aria-hidden="true">
-                {t.id === "mcp" ? (
-                  <Workflow />
-                ) : t.id === "skills" ? (
-                  <Sparkles />
-                ) : t.id === "plugins" ? (
-                  <Boxes />
-                ) : (
-                  <Code2 />
-                )}
-                <i />
-                <i />
-                <i />
-              </div>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </section>
-  );
+function CapabilityPreview() {
+  const [kind, setKind] = useState<ResourceKind>("skill");
+  const featured = kind === "skill" ? ["ego-browser", "obsidian-markdown", "superpowers"] : ["Pencil", "Playwright", "Blender"];
+  return <section className="panel capability-preview">
+    <div className="panel-heading"><span className="panel-icon"><Sparkles size={23} /></span><div><h2>我的 AI 能力库</h2><p>跨工具复用的 Skills 与 MCP。</p></div></div>
+    <Tabs value={kind} onValueChange={value => setKind(value as ResourceKind)} className="capability-tabs">
+      <TabsList><TabsTrigger value="skill">Skills</TabsTrigger><TabsTrigger value="mcp">MCP</TabsTrigger></TabsList>
+    </Tabs>
+    <div className="capability-picks" key={kind}>
+      {resources.filter(r => featured.includes(r.name)).map(r => <Link key={r.id} to={`/resources?kind=${kind}&q=${encodeURIComponent(r.name)}`}><span>{r.name}</span><ArrowUpRight size={17}/></Link>)}
+    </div>
+    <Link className="text-link strong" to={`/resources?kind=${kind}`}>浏览能力库<ArrowRight size={17}/></Link>
+  </section>;
 }
 
 function WorkflowSteps({
@@ -545,9 +427,7 @@ function Home() {
               看看我的工作流 <ArrowRight size={15} />
             </Button>
           </div>
-          <div className="hero-footnote">
-            <span className="tiny-line" /> BUILD · LEARN · SHARE · REPEAT
-          </div>
+
         </div>
         <TerminalIllustration />
       </section>
@@ -555,23 +435,19 @@ function Home() {
         <SectionHeading title="我的 AI 工具箱" to="/tools" link="全部工具" />
         <div className="tool-strip">
           {tools.map((tool) => (
-            <Link
-              to={`/tools/${tool.id}`}
-              key={tool.id}
-              className="tool-shortcut"
-            >
+            <OutLink href={tool.url} key={tool.id} className="tool-shortcut">
               <ToolLogo id={tool.id} />
               <div>
                 <h3>{tool.name}</h3>
                 <span>{tool.category}</span>
               </div>
               <ArrowUpRight size={15} className="shortcut-arrow" />
-            </Link>
+            </OutLink>
           ))}
         </div>
       </section>
       <div className="workspace-grid">
-        <ManualCard />
+        <CapabilityPreview />
         <section className="panel workflow-panel">
           <div className="panel-heading">
             <span className="panel-icon">
@@ -581,7 +457,6 @@ function Home() {
               <h2>我的工作流</h2>
               <p>把工具串起来，让创造自然发生。</p>
             </div>
-            <span className="workflow-label">01 / 03</span>
           </div>
           <div className="workflow-title">
             <h3>从想法到页面</h3>
@@ -599,8 +474,7 @@ function Home() {
       </div>
       <section className="content-section">
         <SectionHeading
-          title="我的内容与作品"
-          eyebrow="MADE WITH CURIOSITY"
+          title="精选作品"
           to="/projects"
           link="探索更多"
         />
@@ -764,34 +638,6 @@ function Workflows() {
   );
 }
 
-function EntryList({ entries }: { entries: Entry[] }) {
-  return (
-    <div className="entry-list">
-      {entries.map((entry, i) => (
-        <div className="entry-row" key={entry.name}>
-          <span className="entry-index">{String(i + 1).padStart(2, "0")}</span>
-          <div>
-            <h3>
-              {entry.name}
-              {entry.status && <Badge variant="outline">{entry.status}</Badge>}
-            </h3>
-            <p>{entry.description}</p>
-          </div>
-          {entry.href && (
-            <OutLink
-              href={entry.href}
-              className="entry-link"
-              label={`访问 ${entry.name} 官网或仓库`}
-            >
-              <ArrowUpRight size={18} />
-            </OutLink>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function Tools() {
   const [category, setCategory] = useState("全部");
   return (
@@ -818,11 +664,7 @@ function Tools() {
         {tools
           .filter((t) => category === "全部" || t.category === category)
           .map((t) => (
-            <Link
-              className="panel tool-detail-card"
-              to={`/tools/${t.id}`}
-              key={t.id}
-            >
+            <OutLink className="panel tool-detail-card" href={t.url} key={t.id}>
               <div className="tool-detail-top">
                 <ToolLogo id={t.id} />
                 <Badge variant="outline">{t.category}</Badge>
@@ -832,16 +674,16 @@ function Tools() {
               <h3>{t.label}</h3>
               <p>{t.description}</p>
               <span className="text-link strong">
-                使用方法 · 配置与扩展
+                打开工具
                 <ArrowRight size={14} />
               </span>
-            </Link>
+            </OutLink>
           ))}
       </div>
       <section className="websites-section">
         <SectionHeading eyebrow="BOOKMARKS" title="AI 网站收藏" />
         <p className="section-description">
-          先收好几个常用入口，再慢慢补充自己的使用笔记。
+
         </p>
         <div className="website-grid">
           {websites.map((site, i) => (
@@ -871,146 +713,33 @@ function Tools() {
   );
 }
 
-function ToolPage() {
-  const { id } = useParams();
-  const location = useLocation();
-  const initialTab = new URLSearchParams(location.search).get("tab");
-  const activeTab = manualTabs.some((t) => t.id === initialTab)
-    ? initialTab!
-    : "usage";
-  const tool = tools.find((t) => t.id === id);
-  if (!tool) return <NotFound />;
-  return (
-    <>
-      <Link to="/tools" className="text-link back-link">
-        <ArrowLeft size={15} />
-        返回工具箱
-      </Link>
-      <div className="tool-page-heading">
-        <ToolLogo id={tool.id} />
-        <div>
-          <span className="eyebrow">PERSONAL TOOL HANDBOOK</span>
-          <h1>{tool.name}</h1>
-          <p>{tool.label}</p>
-        </div>
-        <Button
-          nativeButton={false}
-          variant="outline"
-          render={
-            <a href={tool.url} target="_blank" rel="noopener noreferrer" />
-          }
-        >
-          访问官网
-          <ArrowUpRight size={14} />
-        </Button>
-      </div>
-      <p className="tool-intro">{tool.description}</p>
-      <Tabs
-        key={`${id}-${activeTab}`}
-        defaultValue={activeTab}
-        className="handbook-tabs"
-      >
-        <TabsList>
-          {manualTabs.map((t) => (
-            <TabsTrigger key={t.id} value={t.id}>
-              {t.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {manualTabs.map((tab) => (
-          <TabsContent value={tab.id} key={tab.id}>
-            <section className="panel handbook-panel">
-              <SectionHeading
-                title={
-                  tab.id === "usage"
-                    ? "使用思路"
-                    : tab.id === "plugins"
-                      ? "插件与扩展"
-                      : tab.id === "mcp"
-                        ? "连接的工具"
-                        : "可复用的技能"
-                }
-              />
-              <EntryList entries={tool.entries[tab.id]} />
-            </section>
-            {tab.id === "usage" && (
-              <section className="prompt-panel">
-                <div className="section-heading">
-                  <h2>
-                    <Terminal size={17} />
-                    一个简单的任务起点
-                  </h2>
-                  <CopyPrompt />
-                </div>
-                <p>{prompt}</p>
-                <span className="muted-small">
-                  按项目调整目标、约束与验收标准。
-                </span>
-              </section>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
-      <div className="quiet-note">
-        <BookOpen size={17} />
-        <p>
-          清单整理于 2026 年 11
-          月。已安装、已启用和当前可用分别标注；待整理项会继续补充实际使用经验。
-        </p>
-      </div>
-    </>
-  );
+function ResourceCard({ resource }: { resource: Resource }) {
+  return <article className="panel resource-card">
+    <div className="resource-card-heading"><span className="resource-symbol">{resource.kind === "skill" ? <Sparkles size={20}/> : <Workflow size={20}/>}</span><span>{resource.category}</span>{resource.href && <OutLink href={resource.href} label={`访问 ${resource.name} 的公开来源`}><ArrowUpRight size={19}/></OutLink>}</div>
+    <h2>{resource.name}</h2><p>{resource.description}</p>
+  </article>;
 }
-
-function Articles() {
-  return (
-    <>
-      <PageHeader
-        eyebrow="NOTES ALONG THE WAY"
-        title="记录，是另一种创造。"
-        description="前端、工程实践与工具探索。把走过的路，整理成可以分享的文字。"
-      />
-      <div className="articles-list">
-        {articles.map((article, i) => (
-          <OutLink
-            key={article.name}
-            href={article.href}
-            className="article-row"
-          >
-            <span className="article-number">0{i + 1}</span>
-            <div>
-              <Badge variant="outline">{article.category}</Badge>
-              <h2>{article.name}</h2>
-              <p>{article.description}</p>
-              <span className="muted-small">
-                {article.reading}
-                <span className="dot-divider">·</span>掘金
-              </span>
-            </div>
-            <ArrowUpRight size={24} />
-          </OutLink>
-        ))}
-      </div>
-      <div className="reading-links">
-        <OutLink href={profile.blog}>
-          <BookOpen size={24} />
-          <div>
-            <h3>去博客慢慢逛</h3>
-            <p>更完整的技术笔记与学习记录</p>
-          </div>
-          <ArrowUpRight size={19} />
-        </OutLink>
-        <OutLink href={profile.juejin}>
-          <FileText size={24} />
-          <div>
-            <h3>在掘金继续阅读</h3>
-            <p>文章归档与实践分享</p>
-          </div>
-          <ArrowUpRight size={19} />
-        </OutLink>
-      </div>
-    </>
-  );
+function Resources() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const kind: ResourceKind = params.get("kind") === "mcp" ? "mcp" : "skill";
+  const [category, setCategory] = useState("全部");
+  const [query, setQuery] = useState(params.get("q") || "");
+  useEffect(() => { setQuery(new URLSearchParams(location.search).get("q") || ""); setCategory("全部"); }, [location.search]);
+  const categories = ["全部", ...new Set(resources.filter(r => r.kind === kind).map(r => r.category))];
+  const shown = resources.filter(r => r.kind === kind && (category === "全部" || category === r.category) && `${r.name} ${r.description}`.toLowerCase().includes(query.trim().toLowerCase()));
+  return <>
+    <PageHeader eyebrow="" title="我的 AI 能力库" description="按任务组织的 Skills 与 MCP，在不同 AI 工具之间复用。"/>
+    <div className="resource-toolbar">
+      <Tabs value={kind} onValueChange={value => navigate(`/resources?kind=${value}`)} className="resource-kind-tabs"><TabsList><TabsTrigger value="skill">Skills <span>{resources.filter(r=>r.kind === "skill").length}</span></TabsTrigger><TabsTrigger value="mcp">MCP <span>{resources.filter(r=>r.kind === "mcp").length}</span></TabsTrigger></TabsList></Tabs>
+      <Input className="resource-search" aria-label="搜索能力库" placeholder="搜索名称或用途…" value={query} onChange={event=>setQuery(event.target.value)}/>
+    </div>
+    <div className="filter-row resource-filters" aria-label="能力分类">{categories.map(c=><Button key={c} variant={category === c ? "default" : "ghost"} aria-pressed={category === c} onClick={()=>setCategory(c)}>{c}</Button>)}</div>
+    <div className="resource-grid" key={`${kind}-${category}`}>{shown.map(resource=><ResourceCard key={`${resource.kind}-${resource.id}`} resource={resource}/>)}</div>
+    {!shown.length && <p className="data-placeholder">没有找到匹配的能力，试试其他关键词。</p>}
+    <p className="catalog-note">来自本机已安装的公开技能与通用 MCP 配置。清单更新于 2026 年 11 月。</p>
+  </>;
 }
 
 function About() {
@@ -1135,7 +864,7 @@ function SearchDialog({
       title: t.name,
       desc: t.label,
       group: "工具",
-      path: `/tools/${t.id}`,
+      href: t.url,
     })),
     ...projects.map((p) => ({
       title: p.name,
@@ -1149,28 +878,13 @@ function SearchDialog({
       group: "工作流",
       path: "/workflows",
     })),
-    ...articles.map((a) => ({
-      title: a.name,
-      desc: a.description,
-      group: "文章",
-      href: a.href,
-    })),
     ...websites.map((w) => ({
       title: w.name,
       desc: w.description,
       group: "网站",
       href: w.href,
     })),
-    ...tools.flatMap((t) =>
-      (["plugins", "mcp", "skills"] as ManualTab[]).flatMap((tab) =>
-        t.entries[tab].map((e) => ({
-          title: e.name,
-          desc: `${t.name} · ${e.description}`,
-          group: tab === "plugins" ? "Plugin" : tab === "mcp" ? "MCP" : "Skill",
-          path: `/tools/${t.id}?tab=${tab}`,
-        })),
-      ),
-    ),
+    ...resources.map(r => ({ title: r.name, desc: r.description, group: r.kind === "skill" ? "Skill" : "MCP", path: `/resources?kind=${r.kind}&q=${encodeURIComponent(r.name)}` })),
   ];
   const results = entries
     .filter((e) =>
@@ -1188,7 +902,7 @@ function SearchDialog({
         <DialogHeader className="sr-only">
           <DialogTitle>搜索个人空间</DialogTitle>
           <DialogDescription>
-            搜索作品、工具、工作流、文章和扩展。
+            搜索作品、工具、工作流、Skills 和 MCP。
           </DialogDescription>
         </DialogHeader>
         <div className="search-input-wrap">
@@ -1196,7 +910,7 @@ function SearchDialog({
           <Input
             autoFocus
             aria-label="搜索作品、工具、工作流"
-            placeholder="搜索作品、工具、工作流…"
+            placeholder="搜索作品、工具、Skills、MCP…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -1289,10 +1003,10 @@ function Shell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const saved = localStorage.getItem("alex-glass-theme");
-      return saved === "light" || saved === "dark" || saved === "system" ? saved : "dark";
+      const saved = localStorage.getItem("alex-hub-theme");
+      return saved === "light" || saved === "dark" || saved === "system" ? saved : "light";
     } catch {
-      return "dark";
+      return "light";
     }
   });
   const current = navigation.find((n) =>
@@ -1316,7 +1030,7 @@ function Shell() {
     update();
     media.addEventListener("change", update);
     try {
-      localStorage.setItem("alex-glass-theme", theme);
+      localStorage.setItem("alex-hub-theme", theme);
     } catch {
       /* Browser storage is optional. */
     }
@@ -1353,8 +1067,8 @@ function Shell() {
               <small>alexwjj</small>
             </div>
           </Link>
-          <div className="sidebar-label">WORKSPACE</div>
-          <nav className="main-nav" aria-label="主导航">
+          <nav className="main-nav" aria-label="主导航" data-active-index={navigation.findIndex(n => n.to === (current?.to || "/"))}>
+            <span className="nav-glass-indicator" aria-hidden="true" />
             {navigation.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.to === "/"}>
                 <n.icon size={18} />
@@ -1363,15 +1077,6 @@ function Shell() {
               </NavLink>
             ))}
           </nav>
-          <div className="sidebar-note">
-            <span className="note-spark">✳</span>
-            <p>
-              一个创造者的
-              <br />
-              数字自留地。
-            </p>
-            <span>ALWAYS A WORK IN PROGRESS</span>
-          </div>
           <div className="sidebar-bottom">
             <OutLink href={profile.github} className="github-link">
               <Github size={17} />
@@ -1414,15 +1119,7 @@ function Shell() {
               <span className="breadcrumb-home">个人空间</span>
               <ChevronRight size={13} />
               <span>{current?.name || "工具手册"}</span>
-              {location.pathname.startsWith("/tools/") && (
-                <>
-                  <ChevronRight size={13} />
-                  <span>
-                    {tools.find((t) => t.id === location.pathname.split("/")[2])
-                      ?.name || "详情"}
-                  </span>
-                </>
-              )}
+
             </div>
             <div className="topbar-actions">
               <button
@@ -1435,7 +1132,8 @@ function Shell() {
                 <kbd>⌘ K</kbd>
               </button>
               <div className="topbar-divider" />
-              <div className="theme-controls">
+              <div className="theme-controls" data-theme={theme}>
+                <span className="theme-glass-indicator" aria-hidden="true" />
                 {(
                   [
                     { id: "light", label: "浅色主题", icon: Sun },
@@ -1464,24 +1162,21 @@ function Shell() {
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>
-            <Routes>
+            <div className="route-view" key={location.pathname} data-route={location.pathname}><Routes>
               <Route path="/" element={<Home />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/workflows" element={<Workflows />} />
               <Route path="/tools" element={<Tools />} />
-              <Route path="/tools/:id" element={<ToolPage />} />
-              <Route path="/articles" element={<Articles />} />
+              <Route path="/tools/:id" element={<Navigate to="/resources" replace />} />
+              <Route path="/resources" element={<Resources />} />
               <Route path="/about" element={<About />} />
               <Route path="/guestbook" element={<Guestbook />} />
               <Route path="/admin" element={<OwnerDashboard />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
+            </Routes></div>
             <footer className="page-footer">
               <span>
                 © 2026 俊劫 <span className="dot-divider">·</span> 保持所有热爱
-              </span>
-              <span>
-                Made with curiosity <span className="footer-spark">✳</span>
               </span>
             </footer>
           </main>

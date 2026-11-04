@@ -1,6 +1,6 @@
 # 俊劫的个人工作空间
 
-作品、AI 工具、工作流、文章与留言的个人主页。静态内容写在仓库里，修改并推送后由 Vercel 自动部署；登录、留言和访问统计由 Vercel Functions + 独立 Neon/Postgres 提供。
+作品、AI 工具、工作流、Skills、MCP 与留言的个人主页。静态内容写在仓库里，修改并推送后由 Vercel 自动部署；登录、留言和访问统计由 Vercel Functions + 独立 Neon/Postgres 提供。
 
 ## 使用与内容维护
 
@@ -12,10 +12,11 @@ npm run dev
 
 前端 <http://127.0.0.1:5173/>，API <http://127.0.0.1:5005/>。两个端口均不会抢占其他进程。没有 `DATABASE_URL` 时，本地使用 `.local/postgres` 中隔离的 PGlite 数据库；正式环境强制使用 Neon。
 
-- `src/data.ts`：个人介绍、工具手册、AI 网站、工作流、文章。
+- `src/data.ts`：个人介绍、工具入口、AI 网站与工作流。
 - `src/content/projects.json`：公开作品清单、分类、域名和稳定项目 ID。慢变化的数据直接改文件。
 - `src/Hub.tsx`、`src/styles.css`：主站界面，shadcn/ui（Base UI）、黑白与系统主题、全局搜索、响应式布局。
-- `src/LiquidGlass.tsx`、`src/liquid-glass.css`：原生 WebGL 光学层和液态玻璃材质；默认纯黑背景，支持浅色与系统主题。
+- `src/LiquidGlass.tsx`、`src/liquid-glass.css`：跟随 DOM 的透镜折射、玻璃材质与弹簧动效；默认日间主题，支持深色与系统主题。
+- `src/content/resources.ts`：独立、跨工具的公开 Skills 与 MCP 清单，按任务分类。
 - `src/account.tsx`：GitHub 登录状态、留言、站长数据后台。
 - `sdk/`：无运行时依赖的浏览器统计 SDK。构建时复制到 `/sdk/hub.js`。
 - `server/`、`api/index.mjs`：OAuth、权限、留言与统计接口。
@@ -93,6 +94,10 @@ ego-browser nodejs < scripts/glass-smoke.mjs
 
 ## 液态玻璃界面
 
-视觉参考 [liquid-glass-webgl](https://github.com/martin65536/liquid-glass-webgl) 与提供的桌面示例，本仓库独立实现光学层，未引入该项目的渲染器代码或新增运行时依赖。页面背景为纯黑；曲面环境光仅出现在玻璃组件内部，浅色主题使用白底。shadcn / Base UI 继续负责原生文本、键盘、焦点和弹窗。
+参考 [liquid-glass-webgl](https://github.com/martin65536/liquid-glass-webgl) 的透镜边缘、方向高光、按压形变和弹簧切换。本仓库独立实现，未复制参考项目代码，也未新增运行时依赖。
 
-单个 WebGL 画布按 DOM 面板位置绘制边缘折射与方向高光，只在界面变化时重绘；DPR 上限 1.5，画布长边上限 2400px。减少动态效果偏好会关闭指针追光；WebGL 不可用或上下文丢失时保留 CSS 玻璃，恢复时重新创建 GPU 资源，保留正在输入的内容。新版使用独立的 `alex-glass-theme` 保存主题偏好，首次打开默认深色。
+玻璃直接绑定原生组件：在支持的 Chromium 中，通过 SVG 位移滤镜采样实际背景；其他浏览器保留 CSS 模糊与高光。位移贴图仅随组件尺寸生成，滚动不需要 JavaScript 同步屏幕坐标，避免固定画布落后于 DOM 的残影。原生 shadcn / Base UI 继续处理焦点、键盘与弹窗。
+
+按钮有按压与阻尼回弹；菜单、主题和 Skills / MCP 标签使用滑动玻璃指示层，内容切换带短淡入。尊重减少动态效果和减少透明度设置。`alex-hub-theme` 保存本版主题选择，首次打开默认日间。
+
+文章页面和入门手册已删除；工具直接链接到公开入口。能力库来自本机已安装的公开技能与通用 MCP 配置，安装或配置不代表日常使用频率。公开数据不包含内部工具、服务器地址、凭据或个人路径。

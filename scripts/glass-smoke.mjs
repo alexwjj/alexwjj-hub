@@ -1,80 +1,88 @@
 // Run with: ego-browser nodejs < scripts/glass-smoke.mjs
 const { default: assert } = await import('node:assert/strict')
 const page = (await taskSpace('Alex personal hub')).page('p1')
-const origin = 'http://127.0.0.1:5173/'
 const settle = () => page.evaluate(async () => {
-  await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {})))
-  for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame)
+  await Promise.all(document.getAnimations().filter(a => a.playState === 'running').map(a => a.finished.catch(() => {})))
+  for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
 })
-await page.cdp('Emulation.setEmulatedMedia', { features: [] })
-await page.goto(origin)
-await page.waitForSelector('.liquid-scene[data-renderer="webgl"]')
-await page.click('loc=role:button[name="深色主题"]')
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'domcontentloaded' })
+await page.click('loc=role:button[name="浅色主题"]')
+await page.waitForSelector('[data-glass="lens"]')
 await settle()
-await page.evaluate(() => {
-  window.__glassDraws = 0
-  const gl = document.querySelector('.liquid-scene').getContext('webgl')
-  const draw = gl.drawArrays.bind(gl)
-  gl.drawArrays = (...args) => { window.__glassDraws++; draw(...args) }
+assert(await page.evaluate(async () => {
+  const selector = document.querySelector('.search-trigger').style.getPropertyValue('--glass-backdrop').match(/#([^"]+)/)[1]
+  const image = new Image()
+  image.src = document.querySelector(`#${selector} feImage`).getAttribute('href')
+  await image.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width; canvas.height = image.height
+  const context = canvas.getContext('2d'); context.drawImage(image, 0, 0)
+  const left = context.getImageData(1, Math.floor(image.height / 2), 1, 1).data[0]
+  const right = context.getImageData(image.width - 2, Math.floor(image.height / 2), 1, 1).data[0]
+  return left > 128 && right < 128
+}), 'Convex lens samples inward at both rims without clipping the backdrop')
+assert.equal(await page.evaluate(() => document.querySelectorAll('canvas').length), 0, 'No separate screen-space surface renderer')
+const pointer = await page.evaluate(() => {
+  const rect = document.querySelector('.search-trigger').getBoundingClientRect()
+  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
 })
+await page.mouse.move(pointer.x, pointer.y)
+await page.mouse.down()
+await page.waitForFunction(() => { const scale = getComputedStyle(document.querySelector('.search-trigger')).scale; return scale !== 'none' && scale !== '1' })
+await page.mouse.up()
+await page.waitForSelector('[role="dialog"]')
 await settle()
-const idle = await page.evaluate(() => window.__glassDraws)
-await settle()
-assert.equal(await page.evaluate(() => window.__glassDraws), idle, 'No continuous rendering while idle')
-await page.mouse.move(780, 180)
-await settle()
-assert(await page.evaluate(() => window.__glassDraws) > idle, 'Pointer updates the optical layer')
-await page.cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
-await settle()
-await page.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches)
-const readLight = () => page.evaluate(() => {
-  const gl = document.querySelector('canvas').getContext('webgl')
-  const program = gl.getParameter(gl.CURRENT_PROGRAM)
-  return [...gl.getUniform(program, gl.getUniformLocation(program, 'pointer'))]
-})
-const reduced = await readLight()
-await page.mouse.move(850, 190)
-await settle()
-assert.deepEqual(await readLight(), reduced, 'Reduced motion disables pointer lighting')
-await page.cdp('Emulation.setEmulatedMedia', { features: [] })
-await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 3, mobile: false })
-await settle()
-assert(await page.evaluate(() => Math.max(document.querySelector('canvas').width, document.querySelector('canvas').height) <= 2400), 'Retina backing buffer is bounded')
-await page.cdp('Emulation.clearDeviceMetricsOverride')
-await page.keyboard.press('ControlOrMeta+k')
-await page.fill('loc=role:textbox[name="搜索作品、工具、工作流"]', 'codex')
-const canLoseContext = await page.evaluate(() => {
-  window.__glassExtension = document.querySelector('.liquid-scene').getContext('webgl').getExtension('WEBGL_lose_context')
-  return !!window.__glassExtension
-})
-assert(canLoseContext, 'Test browser exposes WebGL context loss extension')
-await page.evaluate(() => window.__glassExtension.loseContext())
-await page.waitForFunction(() => !document.querySelector('.liquid-scene').dataset.renderer)
-assert.equal(await page.evaluate(() => document.querySelector('.search-input-wrap input').value), 'codex', 'Context loss preserves input')
-await page.evaluate(() => window.__glassExtension.restoreContext())
-await page.waitForSelector('.liquid-scene[data-renderer="webgl"]')
-assert.equal(await page.evaluate(() => document.querySelector('.search-input-wrap input').value), 'codex', 'Context restore preserves input without a reload')
-assert.equal(await page.evaluate(() => document.querySelector('.liquid-scene').getContext('webgl').getError()), 0, 'No WebGL error after restoration')
+assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.search-trigger')).scale), 'none', 'Press spring settles and releases its animation')
 await page.keyboard.press('Escape')
-const injection = await page.cdp('Page.addScriptToEvaluateOnNewDocument', {
-  source: `const original = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(type, ...args) {
-    return type === 'webgl' ? null : original.call(this, type, ...args);
-  };`,
-})
+await page.waitForSelector('[role="dialog"]', { state: 'hidden' })
+
+await page.click('loc=role:tab[name="MCP"]')
+await settle()
+assert(await page.evaluate(() => {
+  const tab = document.querySelector('.capability-tabs [aria-selected="true"]').getBoundingClientRect()
+  const indicator = document.querySelector('.capability-tabs [data-slot="tabs-indicator"]').getBoundingClientRect()
+  return Math.abs(tab.x - indicator.x) < 2 && Math.abs(tab.width - indicator.width) < 2
+}), 'Sliding glass indicator ends at the selected tab')
+
+await page.cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
+await page.mouse.move(pointer.x, pointer.y)
+await page.mouse.down()
+assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.search-trigger')).scale), 'none', 'Reduced motion disables press deformation')
+await page.mouse.up()
+await page.keyboard.press('Escape')
+await page.cdp('Emulation.setEmulatedMedia', { features: [] })
+for (const height of [500, 640, 900]) {
+  await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height, deviceScaleFactor: 1, mobile: false })
+  await settle()
+  const menu = await page.evaluate(() => {
+    const sidebar = document.querySelector('.sidebar')
+    return { height: sidebar.clientHeight, content: sidebar.scrollHeight, overflow: getComputedStyle(sidebar).overflowY, bottom: document.querySelector('.profile-card').getBoundingClientRect().bottom }
+  })
+  assert(menu.content <= menu.height + 1, `Sidebar fits ${height}px: ${JSON.stringify(menu)}`)
+  assert(['clip', 'hidden'].includes(menu.overflow))
+  assert(menu.bottom < height, 'Profile remains reachable')
+}
+await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false })
+await page.mouse.move(1000, 700)
+await page.mouse.wheel(0, 650)
+assert(await page.evaluate(() => scrollY > 100), 'Real scrolling occurred')
+assert.equal(await page.evaluate(() => document.querySelectorAll('.liquid-scene').length), 0, 'No fixed canvas can lag behind DOM scrolling')
+await page.screenshot({ path: '/Users/didi/Desktop/warp/alexwjj-hub/.local/scroll-regression.png' })
+await page.cdp('Emulation.clearDeviceMetricsOverride')
+const injection = await page.cdp('Page.addScriptToEvaluateOnNewDocument', { source: `const supports = CSS.supports.bind(CSS); CSS.supports = (...args) => args.join('').includes('url(') ? false : supports(...args);` })
 try {
-  await page.reload()
+  await page.reload({ waitUntil: 'domcontentloaded' })
   await page.waitForSelector('h1')
   await settle()
-  assert(await page.evaluate(() => !document.querySelector('.liquid-scene').dataset.renderer), 'CSS fallback without WebGL')
+  assert.equal(await page.evaluate(() => document.querySelectorAll('[data-glass="lens"]').length), 0)
+  assert(await page.evaluate(() => getComputedStyle(document.querySelector('.panel')).backdropFilter.includes('blur')), 'Native CSS glass fallback')
   await page.click('loc=role:button[name="打开全局搜索"]')
-  await page.waitForSelector('[role="dialog"] .search-input-wrap')
-  await page.fill('loc=role:textbox[name="搜索作品、工具、工作流"]', 'claude')
+  await page.waitForSelector('[role="dialog"]')
+  await page.fill('loc=role:textbox[name="搜索作品、工具、工作流"]', 'pencil')
   await page.waitForFunction(() => document.querySelectorAll('.search-result').length > 0)
-  assert(await page.evaluate(() => getComputedStyle(document.querySelector('.panel')).backdropFilter !== 'none'), 'CSS glass remains available')
 } finally {
   await page.cdp('Page.removeScriptToEvaluateOnNewDocument', { identifier: injection.identifier })
-  await page.reload()
-  await page.waitForSelector('.liquid-scene[data-renderer="webgl"]')
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.waitForSelector('[data-glass="lens"]')
 }
-console.log('PASS: idle rendering, pointer light, reduced motion, retina bounds, context loss/restore with retained input, CSS fallback and native search.')
+console.log('PASS: DOM-bound glass, press/release spring, tab indicator, reduced motion, sidebar at 500/640/900px, real scrolling and CSS fallback.')
