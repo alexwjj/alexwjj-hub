@@ -10,7 +10,8 @@
     "url": "https://alexwjj.weightbook.icu/",
     "kind": "portfolio",
     "origins": [
-      "https://alexwjj.weightbook.icu"
+      "https://alexwjj.weightbook.icu",
+      "https://alexwjj-site.vercel.app"
     ],
     "visibility": "public",
     "image": "./images/portfolio.png"
@@ -59,7 +60,8 @@
     "kind": "chart",
     "origins": [
       "https://j-lab-photos.vercel.app",
-      "jlabphotos://desktop"
+      "jlabphotos://desktop",
+      "https://j-lab-photos.weightbook.icu"
     ],
     "visibility": "public"
   },
@@ -91,7 +93,8 @@
     "visibility": "public",
     "url": "https://jjhot.weightbook.icu/",
     "origins": [
-      "https://jjhot.weightbook.icu"
+      "https://jjhot.weightbook.icu",
+      "https://jj-hot.vercel.app"
     ]
   },
   {
@@ -119,7 +122,8 @@
     "url": "https://weight-manage.vercel.app/",
     "kind": "chart",
     "origins": [
-      "https://weight-manage.vercel.app"
+      "https://weight-manage.vercel.app",
+      "https://www.weightbook.icu"
     ],
     "visibility": "public"
   },

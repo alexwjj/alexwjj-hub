@@ -19,3 +19,18 @@ test('custom domain CSRF stays same-origin and OAuth starts on configured callba
  const response=await authRoute(new Request('https://alexwjj-hub.weightbook.icu/api/auth/login'),config);
  assert.equal(response.headers.get('location'),'https://alexwjj-hub.vercel.app/api/auth/login');
 });
+
+test('all configured project aliases follow the current host in cards and dashboard', async()=>{
+ const {projectUrlForHost}=await import('../src/lib/project-links.ts');
+ for(const project of catalog.filter(p=>!['x-reader','alexwjj-github-io'].includes(p.id))){
+  for(const host of ['weightbook.icu','alexwjj-hub.weightbook.icu','alexwjj-hub.vercel.app']){
+   const result=new URL(projectUrlForHost(project,host));
+   assert(result.hostname.endsWith(host.endsWith('vercel.app')?'.vercel.app':'.weightbook.icu'), `${project.id} on ${host}: ${result.href}`);
+  }
+ }
+ const example={url:'https://old.vercel.app/app/item?q=1#/details',origins:['jlabphotos://desktop','https://new.weightbook.icu']};
+ assert.equal(projectUrlForHost(example,'hub.weightbook.icu'),'https://new.weightbook.icu/app/item?q=1#/details');
+ assert.equal(projectUrlForHost(example,'weightbook.icu.evil.test'),example.url);
+ assert.equal(projectUrlForHost({url:'https://github.com/alexwjj/x-reader',origins:example.origins},'hub.weightbook.icu'),'https://github.com/alexwjj/x-reader');
+ assert.equal(projectUrlForHost({url:null},'hub.weightbook.icu'),null);
+});

@@ -1,3 +1,4 @@
+import { projectUrlForHost } from './lib/project-links';
 import projectCatalog from "./content/projects.json";
 export type ToolId = "claude" | "codex" | "pi" | "pencil" | "warp";
 export type Entry = { name: string; description: string; href?: string; status?: string };
@@ -29,11 +30,9 @@ export type Project = {
   kind: string;
   source?: string;
 };
-export const projects: Project[] = projectCatalog.map(project => {
-  const domestic = typeof location !== "undefined" && (location.hostname === "weightbook.icu" || location.hostname.endsWith(".weightbook.icu"));
-  const origin = project.origins.find(origin => domestic ? new URL(origin).hostname.endsWith(".weightbook.icu") : new URL(origin).hostname.endsWith(".vercel.app"));
-  return { ...project, url: origin ? origin + "/" : project.url };
-});
+export const projects: Project[] = projectCatalog.map(project => ({
+  ...project, url: projectUrlForHost(project, typeof location === "undefined" ? "" : location.hostname) || project.url,
+}));
 
 export const workflows = [
   {

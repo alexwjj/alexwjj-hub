@@ -1,3 +1,4 @@
+import { projectUrlForHost } from './lib/project-links';
 import { analyticsSnippet } from './lib/analytics';
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -100,7 +101,7 @@ export function OwnerDashboard() {
   useEffect(() => {
     if (!user?.isOwner) return
     const controller = new AbortController(); setBusy(true); setError('')
-    Promise.all([api<{ projects: RegistryProject[] }>('/api/admin/projects', { signal: controller.signal }), api<Analytics>(`/api/admin/analytics?days=${days}${projectId ? '&project=' + encodeURIComponent(projectId) : ''}`, { signal: controller.signal })]).then(([registry, report]) => { setProjects(registry.projects); setData(report) }).catch(e => { if (!controller.signal.aborted) setError(e.message) }).finally(() => { if (!controller.signal.aborted) setBusy(false) })
+    Promise.all([api<{ projects: RegistryProject[] }>('/api/admin/projects', { signal: controller.signal }), api<Analytics>(`/api/admin/analytics?days=${days}${projectId ? '&project=' + encodeURIComponent(projectId) : ''}`, { signal: controller.signal })]).then(([registry, report]) => { setProjects(registry.projects.map(project => ({ ...project, url: projectUrlForHost(project, window.location.hostname) }))); setData(report) }).catch(e => { if (!controller.signal.aborted) setError(e.message) }).finally(() => { if (!controller.signal.aborted) setBusy(false) })
     return () => controller.abort()
   }, [user?.isOwner, days, projectId, version])
   if (loading) return <p className="data-placeholder">正在检查身份…</p>

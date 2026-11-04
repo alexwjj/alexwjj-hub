@@ -36,3 +36,7 @@ GitHub OAuth 保留已配置的单一回调域名；从另一域名登录时，�
 ## 客户端接入补齐
 
 x-reader 0.1.6 在扩展弹窗默认初始化随包分发的 SDK，保留匿名统计关闭开关和已有退出选择。JLab Photos 的官网继续使用网页 SDK；Mac 客户端增加独立的匿名上报器，记录应用打开与固定功能入口，全部使用项目 `jlabphotos`，客户端路径固定 `/desktop`。不传递照片、文件路径、位置、人物、私密区事件或 AI 内容，设置中可关闭。两个客户端均需更新安装版本，GitHub 源码提交不会自动替换用户已安装的应用。
+
+## 站内作品链接的渠道映射
+
+公开作品卡片、全局搜索结果和站长后台的作品入口共用 `src/lib/project-links.ts`，按当前 Hub 的 hostname 选择已核实的同渠道域名，保留目标路径、查询和 hash。已补齐个人履历站、JLab Photos、JJHot 和体重管理的域名登记；体重管理国内地址为 `https://www.weightbook.icu/`。学习基地按站长要求保留 GitHub Pages；GitHub 源码链接不改写。
