@@ -6,11 +6,13 @@ await page.cdp('Emulation.clearDeviceMetricsOverride')
 const origin = 'http://127.0.0.1:5173/'
 const frame = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
 const go = async path => {
-  await page.goto(`${origin}#${path}`)
+  await page.goto(`${origin}#${path}`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('h1')
 }
 
 await go('/')
+await page.waitForSelector('.liquid-scene[data-renderer="webgl"]')
+assert.equal(await page.evaluate(() => document.querySelectorAll('.liquid-scene').length), 1, 'One shared optical canvas')
 await page.click('loc=role:button[name="深色主题"]')
 await page.waitForFunction(() => document.documentElement.classList.contains('dark'))
 await page.reload()
@@ -20,7 +22,7 @@ await page.click('loc=role:button[name="浅色主题"]')
 console.log('PASS: theme persistence')
 await page.click('loc=role:tab[name="Codex"]')
 await page.click('loc=role:tab[name="Skills"]')
-assert(await page.evaluate(() => document.querySelector('.manual-tabs [role="tabpanel"]')?.textContent.includes('技能')), 'Manual switches content')
+await page.waitForFunction(() => document.querySelector('.manual-tabs [role="tabpanel"]')?.textContent.includes('技能'))
 console.log('PASS: manual content')
 await page.click('loc=css:.manual-content a')
 await page.waitForURL('**/#/tools/codex?tab=skills')
@@ -62,7 +64,7 @@ await page.waitForSelector('[role="dialog"]', { state: 'hidden' })
 
 console.log('PASS: tool filters and workflow dialog')
 for (const width of [390, 768, 1440]) {
-  for (const route of ['/', '/projects', '/workflows', '/tools', '/tools/claude', '/articles', '/about']) {
+  for (const route of ['/', '/projects', '/workflows', '/tools', '/tools/claude', '/articles', '/about', '/guestbook', '/admin']) {
     await go(route)
     await page.cdp('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: width < 760 })
     await frame()
@@ -83,4 +85,5 @@ await page.waitForFunction(() => location.hash === '#/tools')
 await page.waitForSelector('[role="dialog"]', { state: 'hidden' })
 await page.cdp('Emulation.clearDeviceMetricsOverride')
 await go('/')
-console.log('PASS: theme persistence, handbook tabs/deep links, search and empty state, filters, workflow dialog, mobile navigation, 21 responsive route checks.')
+await page.click('loc=role:button[name="深色主题"]')
+console.log('PASS: theme persistence, handbook tabs/deep links, search and empty state, filters, workflow dialog, mobile navigation, 27 responsive route checks, shared WebGL layer.')

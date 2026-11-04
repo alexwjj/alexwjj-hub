@@ -15,6 +15,7 @@ npm run dev
 - `src/data.ts`：个人介绍、工具手册、AI 网站、工作流、文章。
 - `src/content/projects.json`：公开作品清单、分类、域名和稳定项目 ID。慢变化的数据直接改文件。
 - `src/Hub.tsx`、`src/styles.css`：主站界面，shadcn/ui（Base UI）、黑白与系统主题、全局搜索、响应式布局。
+- `src/LiquidGlass.tsx`、`src/liquid-glass.css`：原生 WebGL 光学层和液态玻璃材质；默认纯黑背景，支持浅色与系统主题。
 - `src/account.tsx`：GitHub 登录状态、留言、站长数据后台。
 - `sdk/`：无运行时依赖的浏览器统计 SDK。构建时复制到 `/sdk/hub.js`。
 - `server/`、`api/index.mjs`：OAuth、权限、留言与统计接口。
@@ -83,8 +84,15 @@ npm run build
 npm audit --omit=dev
 # 前端与 API 启动后，已安装 ego-browser 的环境可执行：
 ego-browser nodejs < scripts/smoke.mjs
+ego-browser nodejs < scripts/glass-smoke.mjs
 ```
 
 测试覆盖签名会话、站长权限、OAuth state/PKCE、真实 SQL 留言与归属校验、跨域采集、去重与聚合、私有元数据保护，以及 SDK 隐私和清理。测试数据库在内存中，不连接生产 Neon。
 
 `.github/workflows/ci.yml` 使用 npm 官方源安装、测试和构建。本仓库 `.npmrc` 与 lockfile 全部使用 `https://registry.npmjs.org`，不依赖内部 npm 源。
+
+## 液态玻璃界面
+
+视觉参考 [liquid-glass-webgl](https://github.com/martin65536/liquid-glass-webgl) 与提供的桌面示例，本仓库独立实现光学层，未引入该项目的渲染器代码或新增运行时依赖。页面背景为纯黑；曲面环境光仅出现在玻璃组件内部，浅色主题使用白底。shadcn / Base UI 继续负责原生文本、键盘、焦点和弹窗。
+
+单个 WebGL 画布按 DOM 面板位置绘制边缘折射与方向高光，只在界面变化时重绘；DPR 上限 1.5，画布长边上限 2400px。减少动态效果偏好会关闭指针追光；WebGL 不可用或上下文丢失时保留 CSS 玻璃，恢复时重新创建 GPU 资源，保留正在输入的内容。新版使用独立的 `alex-glass-theme` 保存主题偏好，首次打开默认深色。

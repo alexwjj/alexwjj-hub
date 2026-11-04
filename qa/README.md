@@ -17,3 +17,12 @@
 检查使用 Chromium 浏览器与模拟视口；未做真实手机、Safari 或 Firefox 验收。外部网站的可用性取决于对应服务。
 
 真实 GitHub 授权登录已通过，站长菜单与 63 条作品清单可见；线上留言发布和删除通过，临时验收留言已删除。主站 SDK 的页面访问、前台停留与性能事件已进入独立 Neon。
+
+## 2026-11-04 液态玻璃改版
+
+- 默认纯黑底，背景不绘制银灰色曲面；桌面浮动侧栏、胶囊按钮、工具卡片、内容面板、留言、站长后台与弹窗采用同一套玻璃材质。
+- `npm test`：14 项通过；`npm run build`：通过。
+- `scripts/smoke.mjs`：保留原有交互回归，新增共享 WebGL 层检查和留言、站长路由，共 27 组响应式检查。
+- `scripts/glass-smoke.mjs`：通过；覆盖静止时不持续重绘、指针追光、减少动态效果、Retina 画布上限、上下文丢失和恢复、输入保留、无 WebGL 的 CSS 降级与搜索。
+- 当前验收截图：`liquid-desktop-dark.png`、`liquid-mobile-dark.png`。
+- 使用 Chromium 模拟视口验收，Safari / Firefox 与真实手机仍未实机检查。

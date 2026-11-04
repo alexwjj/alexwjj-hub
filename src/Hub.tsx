@@ -67,7 +67,9 @@ import {
 } from "./data";
 import type { Entry, ManualTab, Project, ToolId } from "./data";
 import "./styles.css";
+import { LiquidGlass } from "./LiquidGlass";
 import { AccountButton, AuthProvider, Guestbook, OwnerDashboard, useAuth } from "./account";
+import "./liquid-glass.css";
 
 function Github({ size = 18 }: { size?: number }) {
   return (
@@ -539,7 +541,7 @@ function Home() {
             <Button nativeButton={false} render={<Link to="/projects" />}>
               探索我的作品 <ArrowUpRight size={15} />
             </Button>
-            <Button nativeButton={false} variant="ghost" render={<Link to="/workflows" />}>
+            <Button nativeButton={false} variant="outline" render={<Link to="/workflows" />}>
               看看我的工作流 <ArrowRight size={15} />
             </Button>
           </div>
@@ -1287,10 +1289,10 @@ function Shell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const saved = localStorage.getItem("alex-theme");
-      return saved === "light" || saved === "dark" ? saved : "system";
+      const saved = localStorage.getItem("alex-glass-theme");
+      return saved === "light" || saved === "dark" || saved === "system" ? saved : "dark";
     } catch {
-      return "system";
+      return "dark";
     }
   });
   const current = navigation.find((n) =>
@@ -1307,11 +1309,14 @@ function Shell() {
       );
       document.documentElement.style.colorScheme =
         theme === "system" ? "light dark" : theme;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        "content", document.documentElement.classList.contains("dark") ? "#000000" : "#ffffff",
+      );
     };
     update();
     media.addEventListener("change", update);
     try {
-      localStorage.setItem("alex-theme", theme);
+      localStorage.setItem("alex-glass-theme", theme);
     } catch {
       /* Browser storage is optional. */
     }
@@ -1334,6 +1339,7 @@ function Shell() {
   }, [location.pathname, current?.name]);
   return (
     <TooltipProvider>
+      <LiquidGlass />
       <div className="app-shell">
         <aside className="sidebar">
           <Link to="/" className="brand">

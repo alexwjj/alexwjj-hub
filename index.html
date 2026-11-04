@@ -8,14 +8,14 @@
       name="description"
       content="俊劫的个人空间：作品、AI 工具、工作流与技术笔记。保持好奇，把想法变成作品。"
     />
-    <meta name="theme-color" content="#fcfcfa" />
+    <meta name="theme-color" content="#000000" />
     <title>俊劫的个人空间 · 作品、工具与工作流</title>
     <script>
       try {
-        const theme = localStorage.getItem("alex-theme");
+        const theme = localStorage.getItem("alex-glass-theme");
         if (
-          theme === "dark" ||
-          (theme !== "light" &&
+          (theme !== "light" && theme !== "system") ||
+          (theme === "system" &&
             matchMedia("(prefers-color-scheme: dark)").matches)
         )
           document.documentElement.classList.add("dark");
