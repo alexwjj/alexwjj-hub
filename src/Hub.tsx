@@ -1083,24 +1083,7 @@ function Shell() {
               <span>GitHub</span>
               <ArrowUpRight size={14} />
             </OutLink>
-            <div className="profile-card">
-              <img src="./avatar.jpg" alt="" />
-              <div>
-                <strong>俊劫 / Alex</strong>
-                <span>
-                  <i />
-                  保持热爱，持续创造
-                </span>
-              </div>
-              <Tooltip>
-                <TooltipTrigger
-                  render={<Link to="/about" aria-label="关于俊劫" />}
-                >
-                  <ChevronRight size={16} />
-                </TooltipTrigger>
-                <TooltipContent>关于我</TooltipContent>
-              </Tooltip>
-            </div>
+            <div className="sidebar-account"><AccountButton /></div>
           </div>
         </aside>
         <div className="main-wrapper">
@@ -1158,7 +1141,24 @@ function Shell() {
                   </Tooltip>
                 ))}
               </div>
-              <AccountButton />
+              <div className="profile-card topbar-profile">
+                <img src="./avatar.jpg" alt="俊劫的头像" />
+                <div>
+                  <strong>俊劫 / Alex</strong>
+                  <span>
+                    <i />
+                    保持热爱，持续创造
+                  </span>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<Link to="/about" aria-label="关于俊劫" />}
+                  >
+                    <ChevronRight size={16} />
+                  </TooltipTrigger>
+                  <TooltipContent>关于我</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>
@@ -1205,6 +1205,7 @@ function Shell() {
               </NavLink>
             ))}
           </nav>
+          <div className="sidebar-account"><AccountButton /></div>
         </DialogContent>
       </Dialog>
       <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
