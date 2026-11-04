@@ -93,7 +93,7 @@ export function createHandler({ getDatabase = database, config = configuration()
       const origin = request.headers.get('origin')
       const db = await getDatabase()
       const [project] = await db.query('SELECT origins FROM hub_projects WHERE id=$1', [projectId])
-      if (!project || !origin || !(project.origins.includes(origin) || (!process.env.VERCEL && projectId === 'alexwjj-hub' && origin === config.origin))) return json({ error: '未登记的项目来源' }, 403)
+      if (!project || !origin || !((projectId === 'x-reader' && /^chrome-extension:\/\/[a-p]{32}$/.test(origin)) || project.origins.includes(origin) || (!process.env.VERCEL && projectId === 'alexwjj-hub' && origin === config.origin))) return json({ error: '未登记的项目来源' }, 403)
       const headers = { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'Content-Type', 'vary': 'Origin' }
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers })
       if (request.method !== 'POST') return new Response(null, { status: 405, headers })

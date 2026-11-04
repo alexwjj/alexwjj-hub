@@ -38,7 +38,11 @@ export function session(request, config) {
   if (!value || !/^\d+$/.test(value.id) || typeof value.login !== 'string' || typeof value.name !== 'string') return null
   return { id: value.id, login: value.login, name: value.name, isOwner: value.id === config.ownerId }
 }
-export function sameOrigin(request, config) { return request.headers.get('origin') === config.origin }
+const hubOrigins = new Set(['https://alexwjj-hub.vercel.app', 'https://alexwjj-hub.weightbook.icu'])
+export function sameOrigin(request, config) {
+  const target = new URL(request.url).origin
+  return request.headers.get('origin') === target && (target === config.origin || hubOrigins.has(target))
+}
 
 export async function authRoute(request, config, fetcher = fetch) {
   const path = new URL(request.url).pathname
@@ -50,6 +54,7 @@ export async function authRoute(request, config, fetcher = fetch) {
   }
   if (!enabled) return Response.json({ error: 'GitHub 登录尚未完成配置' }, { status: 503 })
   if (path === '/api/auth/login' && request.method === 'GET') {
+    if (new URL(request.url).origin !== config.origin) return new Response(null, { status: 302, headers: { location: config.origin + '/api/auth/login' } })
     const state = randomBytes(32).toString('base64url')
     const verifier = randomBytes(32).toString('base64url')
     const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.origin + '/api/auth/callback', state, scope: 'read:user', code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' })

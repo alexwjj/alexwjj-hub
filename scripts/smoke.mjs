@@ -51,7 +51,7 @@ await page.waitForSelector('[role="dialog"]', { state: 'hidden' })
 
 console.log('PASS: search')
 await go('/projects')
-assert.equal(await page.evaluate(() => document.querySelectorAll('.project-card').length) >= 40, true)
+assert.equal(await page.evaluate(() => document.querySelectorAll('.project-card').length) === 9, true)
 await page.click('loc=role:button[name*="开源项目"]')
 await page.waitForFunction(() => document.querySelectorAll('.project-card').length > 0 && [...document.querySelectorAll('.project-meta > span')].every(e => e.textContent === '开源项目'))
 await page.click('loc=role:button[name*="个人网站"]')

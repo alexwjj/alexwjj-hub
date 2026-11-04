@@ -29,7 +29,11 @@ export type Project = {
   kind: string;
   source?: string;
 };
-export const projects: Project[] = projectCatalog;
+export const projects: Project[] = projectCatalog.map(project => {
+  const domestic = typeof location !== "undefined" && (location.hostname === "weightbook.icu" || location.hostname.endsWith(".weightbook.icu"));
+  const origin = project.origins.find(origin => domestic ? new URL(origin).hostname.endsWith(".weightbook.icu") : new URL(origin).hostname.endsWith(".vercel.app"));
+  return { ...project, url: origin ? origin + "/" : project.url };
+});
 
 export const workflows = [
   {
