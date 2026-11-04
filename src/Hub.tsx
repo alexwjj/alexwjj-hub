@@ -3,42 +3,12 @@ import {
   HashRouter,
   Link,
   NavLink,
+  Navigate,
   Route,
   Routes,
   useLocation,
   useNavigate,
-  Navigate,
 } from "react-router-dom";
-import {
-  BarChart3,
-  MessageSquare,
-  ArrowRight,
-  ArrowUpRight,
-  BookOpen,
-  Boxes,
-  Check,
-  ChevronRight,
-  CircleHelp,
-  Code2,
-  FileText,
-  GitBranch,
-  Layers3,
-  LayoutDashboard,
-  MapPin,
-  Menu,
-  Monitor,
-  Moon,
-  PanelLeftClose,
-  Pencil,
-  Search,
-  Sparkles,
-  Sun,
-  Terminal,
-  Workflow,
-  Zap,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -46,1137 +16,1511 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  api,
+  AuthProvider,
+  Guestbook,
+  OwnerDashboard,
+  useAuth,
+} from "./account";
 import {
-  profile,
-  projects,
-  tools,
-  websites,
-  workflows,
-} from "./data";
-import type { Project, ToolId } from "./data";
+  BackgroundSettings,
+  useAppearance,
+} from "./components/BackgroundSettings";
+import {
+  FilterPills,
+  Icon,
+  OutLink,
+  PageHeading,
+  SearchField,
+  SectionHeading,
+} from "./components/hub-ui";
+import { Discover } from "./Discover";
+import { profile, projects } from "./data";
+import type { Project } from "./data";
 import { resources } from "./content/resources";
-import type { Resource, ResourceKind } from "./content/resources";
-import "./styles.css";
+import type { Resource } from "./content/resources";
+import {
+  dailySteps,
+  designFlows,
+  designTools,
+  projectCopy,
+  skillCopy,
+  skillIcons,
+  mcpIcons,
+} from "./design-data";
 import { LiquidGlass } from "./LiquidGlass";
-import { AccountButton, AuthProvider, Guestbook, OwnerDashboard, useAuth } from "./account";
-import "./liquid-glass.css";
 
-function Github({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.98a9.6 9.6 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.59c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
-    </svg>
-  );
-}
-
-const publicNavigation = [
-  { to: "/", name: "总览", icon: LayoutDashboard, en: "Overview" },
-  { to: "/projects", name: "作品", icon: Layers3, en: "Projects" },
-  { to: "/workflows", name: "工作流", icon: Workflow, en: "Workflows" },
-  { to: "/tools", name: "工具箱", icon: Boxes, en: "Toolbox" },
-  { to: "/resources", name: "能力库", icon: Sparkles, en: "Skills & MCP" },
-  { to: "/guestbook", name: "留言", icon: MessageSquare, en: "Guestbook" },
-  { to: "/about", name: "关于", icon: CircleHelp, en: "About" },
+const navigation = [
+  { to: "/", name: "总览", icon: "panels" },
+  { to: "/projects", name: "作品", icon: "layers", count: "09" },
+  { to: "/workflows", name: "工作流", icon: "workflow", count: "08" },
+  { to: "/tools", name: "AI 工具箱", icon: "command", count: "16" },
+  { to: "/resources", name: "Skills & MCP", icon: "blocks", count: "73" },
+  { to: "/discover", name: "发现", icon: "compass", count: "02" },
+  { to: "/guestbook", name: "留言板", icon: "message" },
+  { to: "/about", name: "关于我", icon: "user" },
+  { to: "/admin", name: "作品数据", icon: "chart" },
 ];
-function navigationFor(owner: boolean) { return owner ? [...publicNavigation, { to: "/admin", name: "作品数据", icon: BarChart3, en: "Analytics" }] : publicNavigation; }
-
-function OutLink({
-  href,
-  children,
-  className = "",
-  label,
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  label?: string;
-}) {
+declare const __HUB_UPDATED_AT__: string;
+const ageMinutes = Math.max(
+  0,
+  Math.floor((Date.now() - Date.parse(__HUB_UPDATED_AT__)) / 60000),
+);
+const updatedLabel =
+  ageMinutes < 1
+    ? "just now"
+    : ageMinutes < 60
+      ? `${ageMinutes} minutes ago`
+      : `${Math.floor(ageMinutes / 60)} hours ago`;
+const projectOrder = [
+  "alexwjj-hub",
+  "alexwjj-site",
+  "family-genealogy",
+  "yunshang-house-3d",
+];
+function MoreLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-      aria-label={label}
-    >
+    <Link className="text-link" to={to}>
       {children}
-    </a>
+      <Icon name="arrow" size={13} />
+    </Link>
   );
 }
-
-function ToolLogo({ id, small = false }: { id: ToolId; small?: boolean }) {
+function HeroStatus() {
   return (
-    <span
-      className={`tool-logo logo-${id} ${small ? "small" : ""}`}
-      aria-hidden="true"
-    >
-      {id === "claude" ? (
-        <span className="claude-star">✳</span>
-      ) : id === "codex" ? (
-        <Code2 />
-      ) : id === "pi" ? (
-        <span className="pi-symbol">π</span>
-      ) : id === "pencil" ? (
-        <Pencil />
-      ) : (
-        <Terminal />
-      )}
-    </span>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  link,
-  to,
-  children,
-}: {
-  eyebrow?: string;
-  title: string;
-  link?: string;
-  to?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="section-heading">
-      <div>
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h2>{title}</h2>
-      </div>
-      {children ||
-        (to && (
-          <Link className="text-link" to={to}>
-            {link || "查看全部"}
-            <ArrowRight size={14} />
-          </Link>
-        ))}
-    </div>
-  );
-}
-
-function TerminalIllustration() {
-  return (
-    <div className="hero-art" aria-hidden="true">
-      <div className="art-orbit orbit-one" />
-      <div className="art-orbit orbit-two" />
-      <div className="art-cross cross-one">+</div>
-      <div className="art-cross cross-two">+</div>
-      <div className="floating-tag">
-        <span /> ideas into reality
-      </div>
-      <div className="terminal-window">
-        <div className="terminal-top">
-          <span className="window-dots">
-            <i />
-            <i />
-            <i />
+    <div className="hero-status">
+      <div className="glass status-back" />
+      <div className="glass status-front">
+        <div className="flex items-center justify-between muted text-[10px]">
+          <span className="flex items-center gap-2">
+            <i className="status-dot" />
+            正在构建
           </span>
-          <span>~/alex/workspace</span>
-          <GitBranch size={11} />
+          <Icon name="git" size={14} />
         </div>
-        <div className="terminal-code">
-          <p>
-            <span className="code-muted">01</span>
-            <span className="code-green">const</span> workspace = {"{"}
-          </p>
-          <p>
-            <span className="code-muted">02</span>
-            <span className="code-indent">create:</span>{" "}
-            <span className="code-lime">'with curiosity'</span>,
-          </p>
-          <p>
-            <span className="code-muted">03</span>
-            <span className="code-indent">build:</span>{" "}
-            <span className="code-lime">'with AI'</span>,
-          </p>
-          <p>
-            <span className="code-muted">04</span>
-            <span className="code-indent">share:</span>{" "}
-            <span className="code-lime">'in public'</span>
-          </p>
-          <p>
-            <span className="code-muted">05</span>
-            {"}"}
-            <span className="terminal-cursor" />
-          </p>
+        <h2 className="text-[25px] font-semibold tracking-[-1px] mt-[14px]">
+          alexwjj-hub
+        </h2>
+        <p className="text-xs muted mt-[14px]">一个持续生长的个人数字空间</p>
+        <div className="mono text-[9px] muted mt-4 pt-3 border-t border-border flex gap-[7px]">
+          <Icon name="commit" size={13} />
+          main · updated {updatedLabel}
         </div>
-        <div className="terminal-bottom">
-          <span>
-            <span className="status-dot" /> always building
-          </span>
-          <span>⌘ ↵</span>
-        </div>
-      </div>
-      <div className="floating-icon">
-        <Sparkles size={20} />
       </div>
     </div>
   );
 }
-
-function CapabilityPreview() {
-  const [kind, setKind] = useState<ResourceKind>("skill");
-  const featured = kind === "skill" ? ["ego-browser", "obsidian-markdown", "superpowers"] : ["Pencil", "Playwright", "Blender"];
-  return <section className="panel capability-preview">
-    <div className="panel-heading"><span className="panel-icon"><Sparkles size={23} /></span><div><h2>我的 AI 能力库</h2><p>跨工具复用的 Skills 与 MCP。</p></div></div>
-    <Tabs value={kind} onValueChange={value => setKind(value as ResourceKind)} className="capability-tabs">
-      <TabsList><TabsTrigger value="skill">Skills</TabsTrigger><TabsTrigger value="mcp">MCP</TabsTrigger></TabsList>
-    </Tabs>
-    <div className="capability-picks" key={kind}>
-      {resources.filter(r => featured.includes(r.name)).map(r => <Link key={r.id} to={`/resources?kind=${kind}&q=${encodeURIComponent(r.name)}`}><span>{r.name}</span><ArrowUpRight size={17}/></Link>)}
-    </div>
-    <Link className="text-link strong" to={`/resources?kind=${kind}`}>浏览能力库<ArrowRight size={17}/></Link>
-  </section>;
-}
-
-function WorkflowSteps({
-  full = false,
-  workflow = workflows[0],
-}: {
-  full?: boolean;
-  workflow?: (typeof workflows)[number];
-}) {
+function Home() {
+  const [kind, setKind] = useState("Skills");
+  const hub = projects.find((p) => p.id === "alexwjj-hub")!;
   return (
-    <ol className={`workflow-steps ${full ? "full" : ""}`}>
-      {workflow.steps.map((step, i) => (
-        <li key={step.title}>
-          <span className="step-number">{String(i + 1).padStart(2, "0")}</span>
-          <div>
-            <h3>{step.title}</h3>
-            <p>{full ? step.detail : step.description}</p>
-            {full && (
-              <span className="step-output">
-                <Check size={13} />
-                {step.output}
-              </span>
-            )}
+    <>
+      <section className="home-hero">
+        <div className="hero-copy">
+          <div className="eyebrow flex items-center gap-2">
+            <i className="status-dot" />
+            ALEXWJJ — A SPACE TO CREATE
           </div>
-          {!full && <ChevronRight size={13} className="step-chevron" />}
-        </li>
-      ))}
-    </ol>
+          <h1>创造，自成一格。</h1>
+          <p>作品、工具与灵感，在这里自然连接。</p>
+          <div className="flex gap-3 mt-[22px]">
+            <Link className="pill primary !h-[42px] !px-5" to="/projects">
+              探索我的作品
+              <Icon name="arrow" size={16} />
+            </Link>
+            <Link className="pill !h-[42px] !px-4" to="/workflows">
+              查看工作流
+              <Icon name="right" size={17} />
+            </Link>
+          </div>
+        </div>
+        <HeroStatus />
+      </section>
+      <section className="home-tools">
+        <SectionHeading title="你的常用工具" eyebrow="MY DAILY STACK">
+          <MoreLink to="/tools">全部工具</MoreLink>
+        </SectionHeading>
+        <div className="daily-tools">
+          {["claude", "codex", "pi", "pencil", "warp"].map((id) => {
+            const tool = designTools.find((t) => t.id === id)!;
+            return (
+              <OutLink className="glass tool-shortcut" key={id} href={tool.url}>
+                <span className="soft-icon">
+                  <Icon
+                    name={
+                      {
+                        claude: "asterisk",
+                        codex: "code",
+                        pi: "terminal",
+                        pencil: "pencil-line",
+                        warp: "square-terminal",
+                      }[id]
+                    }
+                    size={19}
+                  />
+                </span>
+                <div>
+                  <h3>{tool.name}</h3>
+                  <p>{tool.subtitle}</p>
+                </div>
+                <Icon name="arrow" size={13} className="ml-auto muted" />
+              </OutLink>
+            );
+          })}
+        </div>
+      </section>
+      <section className="home-work-grid">
+        <div>
+          <SectionHeading title="精选作品" eyebrow="SELECTED WORK">
+            <MoreLink to="/projects">所有作品</MoreLink>
+          </SectionHeading>
+          <OutLink href={hub.url} className="glass featured-project">
+            <div className="featured-info">
+              <div className="eyebrow">• FEATURED PROJECT / 01</div>
+              <h2>alexwjj-hub</h2>
+              <p>
+                一个持续生长的个人数字空间。
+                <br />
+                让作品、工具与知识，在此连接。
+              </p>
+              <div className="flex gap-2 mt-auto items-center">
+                <span className="tag">React</span>
+                <span className="tag">shadcn/ui</span>
+                <span className="text-link ml-auto">
+                  查看项目
+                  <Icon name="arrow" size={13} />
+                </span>
+              </div>
+            </div>
+            <img
+              className="featured-preview"
+              src="/design/previews/ONbqX.webp"
+              alt="alexwjj-hub 界面预览"
+            />
+          </OutLink>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <Link className="glass mini-project" to="/workflows">
+              <Icon name="workflow" size={21} />
+              <div>
+                <h3>AI DevFlow</h3>
+                <p>从需求到交付的 AI 开发实践</p>
+              </div>
+              <Icon name="arrow" size={13} className="ml-auto muted" />
+            </Link>
+            <Link className="glass mini-project" to="/projects">
+              <Icon name="panels" size={21} />
+              <div>
+                <h3>UI Lab</h3>
+                <p>界面实验与交互灵感</p>
+              </div>
+              <Icon name="arrow" size={13} className="ml-auto muted" />
+            </Link>
+          </div>
+        </div>
+        <div>
+          <SectionHeading title="让工具协同工作">
+            <MoreLink to="/workflows">全部工作流</MoreLink>
+          </SectionHeading>
+          <Link className="glass home-flow" to="/workflows">
+            <div className="flex justify-between">
+              <div>
+                <h3>从想法到上线</h3>
+                <p className="mt-2 muted text-[11px]">我的日常 AI 开发路径</p>
+              </div>
+              <span className="round-button">
+                <Icon name="arrow" size={18} />
+              </span>
+            </div>
+            <ol>
+              {[
+                { title: "理解与拆解", tool: "Claude Code · 项目上下文" },
+                { title: "设计与构建", tool: "Pencil + shadcn/ui" },
+                { title: "编码与验证", tool: "Codex · Warp · ego lite" },
+                { title: "部署与沉淀", tool: "GitHub · Vercel" },
+              ].map((step, i) => (
+                <li key={step.title}>
+                  <span className="mono muted text-[10px]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <strong>{step.title}</strong>
+                  <span className="ml-auto muted text-[10px]">{step.tool}</span>
+                </li>
+              ))}
+            </ol>
+          </Link>
+        </div>
+      </section>
+      <section className="home-capabilities">
+        <SectionHeading title="可复用的能力">
+          <MoreLink to="/resources">探索能力库</MoreLink>
+        </SectionHeading>
+        <div className="glass capability-summary">
+          <div className="flex justify-between">
+            <div className="segment">
+              <button
+                className={kind === "Skills" ? "selected" : ""}
+                onClick={() => setKind("Skills")}
+              >
+                Skills <span>67</span>
+              </button>
+              <button
+                className={kind === "MCP" ? "selected" : ""}
+                onClick={() => setKind("MCP")}
+              >
+                MCP <span>06</span>
+              </button>
+            </div>
+            <Icon name="bookmark" size={18} className="muted" />
+          </div>
+          <div className="grid grid-cols-2 gap-8 mt-[17px] max-sm:grid-cols-1">
+            {(kind === "Skills"
+              ? [
+                  {
+                    name: "superpowers",
+                    description: "让 Agent 拥有完整工程思维",
+                  },
+                  {
+                    name: "frontend-design",
+                    description: "构建更有辨识度的前端界面",
+                  },
+                ]
+              : [
+                  { name: "GitHub", description: "连接仓库、Issue 与代码审查" },
+                  { name: "Pencil", description: "在设计与代码之间保持上下文" },
+                ]
+            ).map((r) => (
+              <Link
+                className="capability-summary-link"
+                to={`/resources?kind=${kind === "Skills" ? "skill" : "mcp"}&q=${encodeURIComponent(r.name)}`}
+                key={r.name}
+              >
+                <Icon
+                  name={r.name === "superpowers" ? "sparkles" : "blocks"}
+                  size={20}
+                />
+                <div>
+                  <h3 className="mono text-[13px] font-medium">{r.name}</h3>
+                  <p className="muted text-[11px] mt-1.5">{r.description}</p>
+                </div>
+                <Icon name="arrow" size={13} className="ml-auto muted" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
-
-function WorkflowDialog({
-  workflow,
-  open,
-  setOpen,
+function ProjectCard({ project, index }: { project: Project; index: number }) {
+  const info = projectCopy[project.id];
+  return (
+    <article className="glass project-card">
+      <OutLink href={project.url} className="block">
+        <div className="project-preview">
+          {info?.image ? (
+            <img
+              src={"/design/previews/" + info.image + ".webp"}
+              alt={(info?.name || project.name) + " 界面预览"}
+            />
+          ) : project.image ? (
+            <img src={project.image} alt={project.name} />
+          ) : (
+            <div className="generic-preview">
+              <Icon
+                name={
+                  project.id === "jlabphotos"
+                    ? "image"
+                    : project.id === "x-reader"
+                      ? "book"
+                      : "panels"
+                }
+                size={42}
+              />
+              <span>{project.name}</span>
+            </div>
+          )}
+        </div>
+      </OutLink>
+      <div className="project-information">
+        <div className="muted text-[10px]">
+          {project.category} /{" "}
+          {project.id === "alexwjj-hub"
+            ? "WORKSPACE"
+            : String(index).padStart(2, "0")}
+        </div>
+        <OutLink href={project.url}>
+          <h2>{info?.name || project.name}</h2>
+        </OutLink>
+        <p>{info?.description || project.description}</p>
+        <div className="flex justify-between items-center mt-auto">
+          <span className="mono muted text-[10px]">
+            {info?.tech || project.tags.join(" · ")}
+          </span>
+          <OutLink
+            className="text-link !text-[10px]"
+            href={project.url}
+            label={`打开 ${project.name}`}
+          >
+            {project.id === "alexwjj-hub" ? "打开工作台" : null}
+            <Icon name="arrow" size={14} />
+          </OutLink>
+        </div>
+      </div>
+    </article>
+  );
+}
+function Projects() {
+  const [category, setCategory] = useState("全部 09"),
+    [query, setQuery] = useState(""),
+    [expanded, setExpanded] = useState(false);
+  const ordered = [...projects].sort(
+    (a, b) =>
+      (projectOrder.indexOf(a.id) < 0 ? 99 : projectOrder.indexOf(a.id)) -
+      (projectOrder.indexOf(b.id) < 0 ? 99 : projectOrder.indexOf(b.id)),
+  );
+  const filtered = ordered.filter(
+    (p) =>
+      (category.startsWith("全部") || category.startsWith(p.category)) &&
+      `${p.name} ${p.description} ${p.tags.join(" ")}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
+  );
+  const shown =
+    category.startsWith("全部") && !query && !expanded
+      ? filtered.slice(0, 4)
+      : filtered;
+  return (
+    <>
+      <PageHeading
+        eyebrow="PROJECTS / 09"
+        title="把探索，做成作品。"
+        description="从一个想法出发，把技术、设计与真实需求连接起来。"
+      />
+      <div className="page-controls">
+        <FilterPills
+          label="作品分类"
+          items={["全部 09", "个人网站 03", "产品实践 05", "开源项目 01"]}
+          value={category}
+          onChange={(v) => {
+            setCategory(v);
+            setExpanded(false);
+          }}
+        />
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="搜索名称、技术或用途"
+          label="搜索作品"
+        />
+      </div>
+      <div className="projects-grid">
+        {shown.map((p, i) => (
+          <ProjectCard project={p} index={i} key={p.id} />
+        ))}
+      </div>
+      {!shown.length && (
+        <p className="data-placeholder">没有找到匹配的作品。</p>
+      )}
+      <div className="flex items-center justify-between mt-[34px]">
+        <span className="mono text-[11px] muted">
+          精选展示 {String(shown.length).padStart(2, "0")} / 09
+        </span>
+        {!expanded && shown.length < filtered.length && (
+          <button className="pill" onClick={() => setExpanded(true)}>
+            查看其余 {filtered.length - shown.length} 个作品
+            <Icon name="down" size={14} />
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+function FlowDialog({
+  flow,
+  onClose,
 }: {
-  workflow: (typeof workflows)[number];
-  open: boolean;
-  setOpen: (open: boolean) => void;
+  flow: (typeof designFlows)[number] | null;
+  onClose: () => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="detail-dialog">
+    <Dialog open={!!flow} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flow-dialog">
         <DialogHeader>
-          <span className="eyebrow">WORKFLOW TEMPLATE</span>
-          <DialogTitle>{workflow.name}</DialogTitle>
-          <DialogDescription>
-            {workflow.description} 这是一份可按项目调整的流程模板。
-          </DialogDescription>
+          <DialogTitle>{flow?.title}</DialogTitle>
+          <DialogDescription>{flow?.description}</DialogDescription>
         </DialogHeader>
-        <WorkflowSteps full workflow={workflow} />
-        <div className="dialog-bottom">
-          <span>组合工具</span>
-          {workflow.tools.map((t) => (
-            <Badge key={t} variant="secondary">
-              {t}
-            </Badge>
+        <ol className="space-y-5 mt-5">
+          {(flow?.id === "delivery"
+            ? dailySteps
+            : flow?.trail.split(" → ").map((title, i) => ({
+                title,
+                description: flow.description,
+                tool: flow.tools.split(" / ")[
+                  Math.min(i, flow.tools.split(" / ").length - 1)
+                ],
+                icon: flow.icon,
+              })) || []
+          ).map((step, i) => (
+            <li className="flex gap-4" key={step.title}>
+              <span className="soft-icon mono text-xs">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h3 className="text-base">{step.title}</h3>
+                <p className="muted text-[13px] leading-7 mt-1">
+                  {step.description}
+                </p>
+                <span className="tag mt-2">{step.tool}</span>
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </DialogContent>
     </Dialog>
   );
 }
-
-function ProjectPreview({ project }: { project: Project }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <div className={`project-preview preview-${project.kind}`}>
-      {project.image && !failed ? (
-        <img
-          src={project.image}
-          alt={`${project.name}网站预览`}
-          loading="lazy"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="project-graphic" aria-hidden="true">
-          {project.kind === "chart" ? (
-            <>
-              <div className="chart-bars">
-                {[35, 66, 45, 85, 60, 100, 74].map((h, i) => (
-                  <i key={i} style={{ height: `${h}%` }} />
-                ))}
-              </div>
-              <span>Visualize your ideas.</span>
-            </>
-          ) : project.kind === "pdf" || project.kind === "print" ? (
-            <>
-              <FileText size={48} strokeWidth={1} />
-              <span>
-                {project.kind === "pdf" ? "HTML → PDF" : "Print, simply."}
-              </span>
-            </>
-          ) : project.kind === "micro" ? (
-            <>
-              <div className="micro-blocks">
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-              <span>Independent. Connected.</span>
-            </>
-          ) : (
-            <>
-              <Code2 size={48} strokeWidth={1} />
-              <span>
-                {project.kind === "perf"
-                  ? "Make the web faster."
-                  : "Keep building."}
-              </span>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+function Workflows() {
+  const location = useLocation();
+  useEffect(() => {
+    setQuery(new URLSearchParams(location.search).get("q") || "");
+    setCategory("全部 08");
+  }, [location.search]);
+  const [category, setCategory] = useState("全部 08"),
+    [query, setQuery] = useState(
+      new URLSearchParams(location.search).get("q") || "",
+    ),
+    [selected, setSelected] = useState<(typeof designFlows)[number] | null>(
+      null,
+    ),
+    [expanded, setExpanded] = useState(false);
+  const matches = designFlows.filter(
+    (f) =>
+      (category.startsWith("全部") || f.category === category) &&
+      `${f.title} ${f.description} ${f.tools}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
   );
-}
-
-function ProjectCard({
-  project,
-  compact = false,
-}: {
-  project: Project;
-  compact?: boolean;
-}) {
-  return (
-    <article className={`project-card ${compact ? "compact" : ""}`}>
-      <OutLink href={project.url} className="project-main">
-        <ProjectPreview project={project} />
-        <div className="project-info">
-          <div className="project-meta">
-            <span>{project.category}</span>
-            <ArrowUpRight size={17} />
-          </div>
-          <h3>{project.name}</h3>
-          <p>{project.description}</p>
-          <div className="project-tags">
-            {project.tags.map((t) => (
-              <span key={t}>{t}</span>
-            ))}
-          </div>
-        </div>
-      </OutLink>
-      {!compact && project.source && (
-        <OutLink href={project.source} className="project-source">
-          <Github size={13} />
-          查看源代码
-          <ArrowUpRight size={12} />
-        </OutLink>
-      )}
-    </article>
-  );
-}
-
-function Home() {
-  const [workflowOpen, setWorkflowOpen] = useState(false);
+  const daily = matches.find((f) => f.id === "delivery");
+  const extra = matches.filter((f) => f.id !== "delivery");
   return (
     <>
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="eyebrow">
-            <span className="status-dot" /> ALEX’S PERSONAL SPACE
-          </span>
-          <h1>
-            保持好奇，
-            <br />
-            把想法变成
-            <span className="hero-accent">
-              作品<span className="accent-dot">。</span>
-            </span>
-          </h1>
-          <p>
-            你好，我是俊劫。<span className="hero-wave">✳</span>
-            <br className="mobile-break" />
-            在这里记录开发、整理工具，也持续探索 AI 的更多可能。
-          </p>
-          <div className="hero-actions">
-            <Button nativeButton={false} render={<Link to="/projects" />}>
-              探索我的作品 <ArrowUpRight size={15} />
-            </Button>
-            <Button nativeButton={false} variant="outline" render={<Link to="/workflows" />}>
-              看看我的工作流 <ArrowRight size={15} />
-            </Button>
-          </div>
-
-        </div>
-        <TerminalIllustration />
-      </section>
-      <section className="tools-section">
-        <SectionHeading title="我的 AI 工具箱" to="/tools" link="全部工具" />
-        <div className="tool-strip">
-          {tools.map((tool) => (
-            <OutLink href={tool.url} key={tool.id} className="tool-shortcut">
-              <ToolLogo id={tool.id} />
-              <div>
-                <h3>{tool.name}</h3>
-                <span>{tool.category}</span>
-              </div>
-              <ArrowUpRight size={15} className="shortcut-arrow" />
-            </OutLink>
-          ))}
-        </div>
-      </section>
-      <div className="workspace-grid">
-        <CapabilityPreview />
-        <section className="panel workflow-panel">
-          <div className="panel-heading">
-            <span className="panel-icon">
-              <Workflow size={19} />
-            </span>
-            <div>
-              <h2>我的工作流</h2>
-              <p>把工具串起来，让创造自然发生。</p>
-            </div>
-          </div>
-          <div className="workflow-title">
-            <h3>从想法到页面</h3>
-            <Badge variant="secondary">开发流程</Badge>
-          </div>
-          <WorkflowSteps />
-          <button
-            className="text-link strong"
-            onClick={() => setWorkflowOpen(true)}
-          >
-            展开完整流程
-            <ArrowRight size={14} />
-          </button>
-        </section>
-      </div>
-      <section className="content-section">
-        <SectionHeading
-          title="精选作品"
-          to="/projects"
-          link="探索更多"
-        />
-        <div className="featured-grid">
-          {projects.slice(0, 2).map((p) => (
-            <ProjectCard project={p} key={p.name} compact />
-          ))}
-        </div>
-      </section>
-      <section className="home-bottom">
-        <span>
-          <Sparkles size={15} />
-          工具在变，创造的热情不变。
-        </span>
-        <Link to="/about">
-          多了解我一点 <ArrowRight size={14} />
-        </Link>
-      </section>
-      <WorkflowDialog
-        workflow={workflows[0]}
-        open={workflowOpen}
-        setOpen={setWorkflowOpen}
+      <PageHeading
+        eyebrow="WORKFLOWS / 08"
+        title="让好方法，稳定复用。"
+        description="把任务拆成清晰步骤，让工具协同，也让每一次交付更从容。"
       />
-    </>
-  );
-}
-
-function PageHeader({
-  eyebrow,
-  title,
-  description,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <header className="page-heading">
-      <span className="eyebrow">{eyebrow}</span>
-      <div>
-        <h1>{title}</h1>
-        {children}
+      <div className="page-controls">
+        <FilterPills
+          items={["全部 08", "开发交付", "设计实现", "知识整理", "内容创作"]}
+          value={category}
+          onChange={setCategory}
+        />
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="搜索流程或使用场景"
+        />
       </div>
-      <p>{description}</p>
-    </header>
-  );
-}
-
-function Projects() {
-  const [filter, setFilter] = useState("全部");
-  const [query, setQuery] = useState("");
-  return (
-    <>
-      <PageHeader
-        eyebrow="SELECTED WORK & EXPERIMENTS"
-        title="用作品，记录探索。"
-        description="从前端工程到个人网站，把学习与想法写进真实的项目里。"
-      >
-        <OutLink href={profile.github} className="text-link">
-          <Github size={16} />
-          GitHub
-          <ArrowUpRight size={14} />
-        </OutLink>
-      </PageHeader>
-      <div className="filter-row" aria-label="作品分类">
-        {["全部", ...new Set(projects.map(p => p.category))].map((f) => (
-          <Button
-            key={f}
-            size="sm"
-            variant={filter === f ? "default" : "ghost"}
-            aria-pressed={filter === f}
-            onClick={() => setFilter(f)}
+      {daily && (
+        <article className="glass workflow-feature">
+          <div className="flex flex-col">
+            <div className="eyebrow">DAILY WORKFLOW / 01</div>
+            <h2>从想法到上线</h2>
+            <p>
+              先理解问题，再设计与实现。
+              <br />
+              把验证放进过程，把经验留给下一次。
+            </p>
+            <div className="flex gap-2 mt-5">
+              <span className="tag">5 steps</span>
+              <span className="tag">AI assisted</span>
+            </div>
+            <p className="!text-[11px] mt-auto">
+              适合新功能、个人项目与小型产品验证。
+            </p>
+            <button
+              className="pill primary self-start mt-5"
+              onClick={() => setSelected(daily)}
+            >
+              查看完整流程
+              <Icon name="arrow" size={14} />
+            </button>
+          </div>
+          <ol className="workflow-detail-steps">
+            {dailySteps.map((step, i) => (
+              <li key={step.title}>
+                <span className="soft-icon mono text-[10px]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+                <span className="ml-auto flex flex-col items-end gap-2">
+                  <Icon name={step.icon} size={16} />
+                  <span>{step.tool}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </article>
+      )}
+      <div className="mt-9 more-flow-heading">
+        <SectionHeading title="为不同任务，留下一条清晰路径。" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {(expanded || query || !category.startsWith("全部")
+          ? extra
+          : extra.slice(0, 3)
+        ).map((flow) => (
+          <button
+            className="glass workflow-small text-left"
+            key={flow.id}
+            onClick={() => setSelected(flow)}
           >
-            {f}
-            <span className="filter-count">
-              {f === "全部"
-                ? projects.length
-                : projects.filter((p) => p.category === f).length}
-            </span>
-          </Button>
+            <div className="flex justify-between muted">
+              <Icon name={flow.icon} size={24} />
+              <Icon name="arrow" size={13} />
+            </div>
+            <h3>{flow.title}</h3>
+            <p>{flow.description}</p>
+            <span className="text-[11px] muted mt-auto">{flow.trail}</span>
+            <span className="text-[10px] muted mt-2">{flow.tools}</span>
+          </button>
         ))}
       </div>
-      <Input className="project-search" aria-label="搜索作品" placeholder="按名称、技术或用途搜索作品…" value={query} onChange={e => setQuery(e.target.value)} />
-      <div className="projects-grid">
-        {projects
-          .filter((p) => (filter === "全部" || p.category === filter) && `${p.name} ${p.description} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase()))
-          .map((p) => (
-            <ProjectCard key={p.name} project={p} />
-          ))}
-      </div>
+      {!expanded && extra.length > 3 && (
+        <button
+          className="text-link workflow-more ml-auto"
+          onClick={() => setExpanded(true)}
+        >
+          查看其余 {extra.length - 3} 个流程
+          <Icon name="down" size={13} />
+        </button>
+      )}
+      {!matches.length && (
+        <p className="data-placeholder">没有找到匹配的流程。</p>
+      )}
+      <FlowDialog flow={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
-
-function Workflows() {
-  const [selected, setSelected] = useState<(typeof workflows)[number] | null>(
-    null,
+function Tools() {
+  const [category, setCategory] = useState("全部 16"),
+    [query, setQuery] = useState(""),
+    [expanded, setExpanded] = useState(false);
+  const shown = designTools.filter(
+    (t) =>
+      (category.startsWith("全部") ||
+        t.category === category ||
+        (category === "编码助手" && t.id === "warp") ||
+        (category === "效率工具" &&
+          ["开发协作", "浏览器验证", "部署交付"].includes(t.category))) &&
+      `${t.name} ${t.description} ${t.category}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
   );
   return (
     <>
-      <PageHeader
-        eyebrow="HOW I CONNECT THE DOTS"
-        title="从工具，到工作方式。"
-        description="用具体的流程连接想法与结果。这些模板，也在实践中不断调整。"
+      <PageHeading
+        eyebrow="TOOLBOX / 16"
+        title="工具少一点，创造多一点。"
+        description="收录真正进入日常的工具，按任务找到适合自己的下一步。"
       />
-      <div className="workflow-cards">
-        {workflows.map((w, i) => (
-          <article className="panel workflow-full-card" key={w.id}>
-            <div className="workflow-card-top">
-              <span className="workflow-index">0{i + 1}</span>
-              <Badge variant="outline">{w.category}工作流</Badge>
+      <div className="page-controls">
+        <FilterPills
+          items={["全部 16", "编码助手", "设计原型", "效率工具", "知识管理"]}
+          value={category}
+          onChange={setCategory}
+        />
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="搜索工具或任务"
+        />
+      </div>
+      <section className="glass tool-pipeline">
+        <div>
+          <div className="eyebrow">MY DAILY STACK</div>
+          <h2>从设计到上线</h2>
+          <p>每个环节，留下最顺手的工具。</p>
+        </div>
+        {[
+          { name: "设计", tool: "Pencil", icon: "pencil" },
+          {
+            name: "编码",
+            tool: "Claude Code · Codex",
+            detail: "Warp",
+            icon: "code",
+          },
+          {
+            name: "验证",
+            tool: "ego lite",
+            detail: "真实页面验证",
+            icon: "globe",
+          },
+          { name: "交付", tool: "GitHub", icon: "git" },
+          { name: "部署", tool: "Vercel", icon: "triangle" },
+        ].map((step) => (
+          <div className="pipeline-step" key={step.name}>
+            <Icon name={step.icon} size={21} />
+            <small>{step.name}</small>
+            <strong>{step.tool}</strong>
+            {step.detail && <span>{step.detail}</span>}
+          </div>
+        ))}
+      </section>
+      <div className="mt-7 tool-list-heading">
+        <SectionHeading title="常用与精选">
+          <span className="muted text-[11px]">按使用场景整理</span>
+        </SectionHeading>
+      </div>
+      <div className="tool-detail-grid">
+        {(expanded || query || !category.startsWith("全部")
+          ? shown
+          : shown.slice(0, 8)
+        ).map((tool) => (
+          <article className="glass tool-detail-card" key={tool.id}>
+            <div className="flex items-center gap-3">
+              <Icon name={tool.icon} size={21} />
+              <h2>{tool.name}</h2>
+              <span className="ml-auto mono muted text-[10px]">
+                {tool.platform}
+              </span>
             </div>
-            <h2>{w.name}</h2>
-            <p>{w.description}</p>
-            <div className="flow-minimap" aria-hidden="true">
-              {w.steps.map((s, j) => (
-                <span key={s.title}>
-                  <i>{j + 1}</i>
-                  {s.title}
-                  {j !== 3 && <ArrowRight size={12} />}
-                </span>
-              ))}
-            </div>
-            <div className="workflow-card-bottom">
-              <div>
-                {w.tools.map((t) => (
-                  <Badge variant="secondary" key={t}>
-                    {t}
-                  </Badge>
-                ))}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelected(w)}
+            <p>{tool.description}</p>
+            <div className="flex items-center gap-4 mt-auto pt-5">
+              <span className="muted text-[10px]">{tool.category}</span>
+              <OutLink href={tool.docs} className="muted text-[10px]">
+                使用说明
+              </OutLink>
+              <OutLink
+                href={tool.url}
+                className="text-link ml-auto !text-[11px]"
               >
-                查看步骤
-                <ArrowUpRight size={14} />
-              </Button>
+                打开工具
+                <Icon name="arrow" size={13} />
+              </OutLink>
             </div>
           </article>
         ))}
       </div>
-      <div className="quiet-note">
-        <BookOpen size={17} />
-        <div>
-          <h3>好流程，不必复杂。</h3>
-          <p>从一个真实任务开始，留下有用的步骤，删掉不必要的动作。</p>
-        </div>
-      </div>
-      {selected && (
-        <WorkflowDialog
-          workflow={selected}
-          open={!!selected}
-          setOpen={(v) => !v && setSelected(null)}
-        />
+      {!expanded && shown.length > 8 && (
+        <button
+          className="text-link tools-more ml-auto"
+          onClick={() => setExpanded(true)}
+        >
+          查看其余 {shown.length - 8} 个工具
+          <Icon name="down" size={13} />
+        </button>
+      )}
+      {!shown.length && (
+        <p className="data-placeholder">没有找到匹配的工具。</p>
       )}
     </>
   );
 }
-
-function Tools() {
-  const [category, setCategory] = useState("全部");
+function Resources() {
+  const location = useLocation(),
+    navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const kind = params.get("kind") === "mcp" ? "mcp" : "skill";
+  const [query, setQuery] = useState(params.get("q") || ""),
+    [category, setCategory] = useState("全部"),
+    [page, setPage] = useState(0),
+    [selected, setSelected] = useState<Resource | null>(null);
+  useEffect(() => {
+    setQuery(new URLSearchParams(location.search).get("q") || "");
+    setCategory("全部");
+    setPage(0);
+  }, [location.search]);
+  const ordered = [...resources].sort((a, b) => {
+    if (kind === "mcp") {
+      const ids = [
+        "github",
+        "pencil",
+        "playwright",
+        "blender",
+        "figma",
+        "vercel",
+      ];
+      return ids.indexOf(a.id) - ids.indexOf(b.id);
+    }
+    const ids = Object.keys(skillCopy);
+    return (
+      (ids.indexOf(a.id) < 0 ? 99 : ids.indexOf(a.id)) -
+      (ids.indexOf(b.id) < 0 ? 99 : ids.indexOf(b.id))
+    );
+  });
+  const matches = ordered.filter(
+    (r) =>
+      r.kind === kind &&
+      (category === "全部" || r.category === category) &&
+      `${r.name} ${r.description} ${skillCopy[r.id]?.title || ""}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  const pages = Math.max(1, Math.ceil(matches.length / 9));
+  const current = Math.min(page, pages - 1);
   return (
     <>
-      <PageHeader
-        eyebrow="MY EVERYDAY TOOLKIT"
-        title="找到顺手的工具。"
-        description="编程、设计与创造。整理工具的用途，也记录它们如何进入工作流。"
+      <PageHeading
+        eyebrow={`CAPABILITIES / ${kind === "skill" ? "SKILLS" : "MCP"}`}
+        title={
+          kind === "skill" ? "让能力，随需而用。" : "让 AI，连接你的工作现场。"
+        }
+        description={
+          kind === "skill"
+            ? "按任务查找 Skills 与 MCP，把有效的方法带进每一次 AI 协作。"
+            : "把代码、文档、浏览器与本地资源接进来，让上下文真正参与工作。"
+        }
       />
-      <div className="filter-row" aria-label="工具分类">
-        {["全部", "AI 编程", "设计工具", "效率工具"].map((c) => (
-          <Button
-            size="sm"
-            key={c}
-            variant={c === category ? "default" : "ghost"}
-            aria-pressed={c === category}
-            onClick={() => setCategory(c)}
+      <div className="page-controls capabilities-controls !mb-5">
+        <div className="segment">
+          <button
+            className={kind === "skill" ? "selected" : ""}
+            onClick={() => navigate("/resources?kind=skill")}
           >
-            {c}
-          </Button>
-        ))}
-      </div>
-      <div className="tool-detail-grid">
-        {tools
-          .filter((t) => category === "全部" || t.category === category)
-          .map((t) => (
-            <OutLink className="panel tool-detail-card" href={t.url} key={t.id}>
-              <div className="tool-detail-top">
-                <ToolLogo id={t.id} />
-                <Badge variant="outline">{t.category}</Badge>
-                <ArrowUpRight size={17} />
-              </div>
-              <h2>{t.name}</h2>
-              <h3>{t.label}</h3>
-              <p>{t.description}</p>
-              <span className="text-link strong">
-                打开工具
-                <ArrowRight size={14} />
-              </span>
-            </OutLink>
-          ))}
-      </div>
-      <section className="websites-section">
-        <SectionHeading eyebrow="BOOKMARKS" title="AI 网站收藏" />
-        <p className="section-description">
-
-        </p>
-        <div className="website-grid">
-          {websites.map((site, i) => (
-            <OutLink className="website-item" key={site.name} href={site.href!}>
-              <span className="website-icon">
-                {
-                  [
-                    <Sparkles />,
-                    <span className="claude-star">✳</span>,
-                    <Zap />,
-                    <Search />,
-                    <span>☻</span>,
-                    <Code2 />,
-                  ][i]
-                }
-              </span>
-              <div>
-                <h3>{site.name}</h3>
-                <p>{site.description}</p>
-              </div>
-              <ArrowUpRight size={15} />
-            </OutLink>
-          ))}
+            Skills <span>67</span>
+          </button>
+          <button
+            className={kind === "mcp" ? "selected" : ""}
+            onClick={() => navigate("/resources?kind=mcp")}
+          >
+            MCP <span>06</span>
+          </button>
         </div>
-      </section>
+        <SearchField
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setPage(0);
+          }}
+          placeholder={
+            kind === "skill" ? "搜索名称、用途或关键词" : "搜索服务、资源或用途"
+          }
+          label="搜索能力库"
+        />
+      </div>
+      <FilterPills
+        items={
+          kind === "skill"
+            ? [
+                "全部",
+                "开发",
+                "设计",
+                "浏览器",
+                "知识管理",
+                "内容创作",
+                "文档交付",
+                "协作",
+              ]
+            : ["全部", "开发", "设计", "浏览器"]
+        }
+        value={category}
+        onChange={(v) => {
+          setCategory(v);
+          setPage(0);
+        }}
+      />
+      <div className="section-heading mt-5">
+        <div className="flex items-center gap-3">
+          <h2 className="!text-[15px]">
+            {kind === "skill" ? "全部 Skills" : "六种连接，扩展工作边界。"}
+          </h2>
+          <span className="muted text-[11px]">
+            {kind === "skill" ? `${matches.length} 项能力` : ""}
+          </span>
+        </div>
+        <span className="text-[11px] muted">
+          {kind === "skill" ? "常用优先" : "按用途查看工具与配置方式"}
+        </span>
+      </div>
+      <div
+        className={
+          kind === "skill"
+            ? "resource-grid skills-grid"
+            : "resource-grid mcp-grid"
+        }
+      >
+        {matches.slice(current * 9, current * 9 + 9).map((resource) => {
+          const copy = kind === "skill" ? skillCopy[resource.id] : null;
+          return (
+            <article className="glass resource-card" key={resource.id}>
+              {kind === "mcp" ? (
+                <div className="flex items-center gap-2.5">
+                  <Icon name={mcpIcons[resource.id] || "box"} size={20} />
+                  <h2 className="!m-0 !text-xl !leading-6">{resource.name}</h2>
+                  <span className="ml-auto muted text-[10px]">
+                    {resource.category}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-[10px] muted">
+                    <span className="flex items-center gap-2">
+                      <Icon
+                        name={skillIcons[resource.id] || "sparkles"}
+                        size={16}
+                      />
+                      {resource.category}
+                    </span>
+                    <Icon name="bookmark" size={13} />
+                  </div>
+                  <h2>{copy?.title || resource.name}</h2>
+                </>
+              )}
+              {kind === "skill" && (
+                <span className="mono text-[10px] muted mt-1">
+                  {resource.name}
+                </span>
+              )}
+              <p>{copy?.description || resource.description}</p>
+              {kind === "mcp" && (
+                <span className="text-[10px] muted mt-3">
+                  {
+                    {
+                      github: "仓库检索 / Issue / Pull request",
+                      pencil: "设计画布 / 组件 / 设计到代码",
+                      playwright: "页面操作 / DOM / 截图",
+                      blender: "3D 场景 / 模型 / 材质",
+                      figma: "设计上下文 / 组件 / 样式",
+                      vercel: "部署查询 / 构建与运行信息",
+                    }[resource.id]
+                  }
+                </span>
+              )}
+              <div className="flex justify-between items-center mt-auto pt-5">
+                <span className="muted text-[10px]">
+                  {kind === "skill"
+                    ? copy?.tag || resource.category
+                    : "MODEL CONTEXT PROTOCOL"}
+                </span>
+                <button
+                  className="text-link !text-[10px]"
+                  onClick={() => setSelected(resource)}
+                >
+                  {kind === "skill" ? "查看用法" : "查看配置"}
+                  <Icon name="arrow" size={12} />
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {!matches.length && (
+        <p className="data-placeholder">没有找到匹配的能力。</p>
+      )}
+      {kind === "skill" && (
+        <div className="flex justify-between items-center mt-6">
+          <span className="mono muted text-[10px]">
+            {matches.length ? current * 9 + 1 : 0}–
+            {Math.min((current + 1) * 9, matches.length)} / {matches.length}
+          </span>
+          <div className="flex gap-2 items-center">
+            <button
+              className="pill"
+              disabled={!current}
+              onClick={() => setPage(current - 1)}
+            >
+              <Icon name="left" size={13} />
+              上一页
+            </button>
+            <span className="round-button !w-7 !h-7 primary">
+              {current + 1}
+            </span>
+            <button
+              className="pill"
+              disabled={current >= pages - 1}
+              onClick={() => setPage(current + 1)}
+            >
+              下一页
+              <Icon name="next" size={13} />
+            </button>
+          </div>
+        </div>
+      )}
+      <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
+        <DialogContent className="resource-dialog">
+          <DialogHeader>
+            <DialogTitle>
+              {(selected && skillCopy[selected.id]?.title) || selected?.name}
+            </DialogTitle>
+            <DialogDescription>{selected?.description}</DialogDescription>
+          </DialogHeader>
+          <p className="mono text-[12px] muted">{selected?.name}</p>
+          <p className="text-[13px] leading-7">
+            {selected?.kind === "mcp"
+              ? "按任务连接服务，通过当前 AI 工具的 MCP 设置管理授权与可用范围。"
+              : "在支持 Skills 的 AI 工具中调用该技能，并提供当前任务需要的项目上下文和验收标准。"}
+          </p>
+          {selected?.href ? (
+            <OutLink className="pill primary self-start" href={selected.href}>
+              查看公开来源
+              <Icon name="arrow" size={14} />
+            </OutLink>
+          ) : (
+            <p className="text-xs muted">本地自定义技能，尚无公开安装来源。</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
-
-function ResourceCard({ resource }: { resource: Resource }) {
-  return <article className="panel resource-card">
-    <div className="resource-card-heading"><span className="resource-symbol">{resource.kind === "skill" ? <Sparkles size={20}/> : <Workflow size={20}/>}</span><span>{resource.category}</span>{resource.href && <OutLink href={resource.href} label={`访问 ${resource.name} 的公开来源`}><ArrowUpRight size={19}/></OutLink>}</div>
-    <h2>{resource.name}</h2><p>{resource.description}</p>
-  </article>;
-}
-function Resources() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const params = new URLSearchParams(location.search);
-  const kind: ResourceKind = params.get("kind") === "mcp" ? "mcp" : "skill";
-  const [category, setCategory] = useState("全部");
-  const [query, setQuery] = useState(params.get("q") || "");
-  useEffect(() => { setQuery(new URLSearchParams(location.search).get("q") || ""); setCategory("全部"); }, [location.search]);
-  const categories = ["全部", ...new Set(resources.filter(r => r.kind === kind).map(r => r.category))];
-  const shown = resources.filter(r => r.kind === kind && (category === "全部" || category === r.category) && `${r.name} ${r.description}`.toLowerCase().includes(query.trim().toLowerCase()));
-  return <>
-    <PageHeader eyebrow="" title="我的 AI 能力库" description="按任务组织的 Skills 与 MCP，在不同 AI 工具之间复用。"/>
-    <div className="resource-toolbar">
-      <Tabs value={kind} onValueChange={value => navigate(`/resources?kind=${value}`)} className="resource-kind-tabs"><TabsList><TabsTrigger value="skill">Skills <span>{resources.filter(r=>r.kind === "skill").length}</span></TabsTrigger><TabsTrigger value="mcp">MCP <span>{resources.filter(r=>r.kind === "mcp").length}</span></TabsTrigger></TabsList></Tabs>
-      <Input className="resource-search" aria-label="搜索能力库" placeholder="搜索名称或用途…" value={query} onChange={event=>setQuery(event.target.value)}/>
-    </div>
-    <div className="filter-row resource-filters" aria-label="能力分类">{categories.map(c=><Button key={c} variant={category === c ? "default" : "ghost"} aria-pressed={category === c} onClick={()=>setCategory(c)}>{c}</Button>)}</div>
-    <div className="resource-grid" key={`${kind}-${category}`}>{shown.map(resource=><ResourceCard key={`${resource.kind}-${resource.id}`} resource={resource}/>)}</div>
-    {!shown.length && <p className="data-placeholder">没有找到匹配的能力，试试其他关键词。</p>}
-    <p className="catalog-note">来自本机已安装的公开技能与通用 MCP 配置。清单更新于 2026 年 11 月。</p>
-  </>;
-}
-
 function About() {
   return (
     <>
-      <PageHeader
-        eyebrow="A LITTLE ABOUT ME"
+      <PageHeading
+        eyebrow="ABOUT / ALEX"
         title="你好，我是俊劫。"
-        description="开发者，也是一个保持好奇的创造者。"
+        description="开发者，也是在工程、设计与 AI 之间持续探索的创造者。"
       />
       <section className="about-intro">
         <div>
-          <p>
-            关注前端工程、AIGC 与产品体验，
+          <h2>
+            把好奇心，
             <br />
-            也喜欢把探索变成可以分享的作品。
+            做成具体的东西。
+          </h2>
+          <p>
+            我关注前端工程、AIGC 与产品体验。比起收藏更多工具，
+            <br />
+            我更在意它们能否帮助人完成真实的事。
+            <br />
+            <br />
+            这个工作台连接我的作品、常用工具与实践方法，
+            <br />
+            也记录那些还在生长的想法。
           </p>
-          <p className="about-secondary">
-            这里是我的个人工作空间。把散落在博客、GitHub
-            与不同工具里的内容连接起来：做过的作品、正在整理的方法，以及下一次创造可能用上的工具。
-          </p>
-          <span className="location-tag">
-            <MapPin size={14} />
-            浙江 · 杭州
-          </span>
+          <div className="flex flex-wrap gap-2 mt-[25px]">
+            <span className="tag">Frontend Engineering</span>
+            <span className="tag">AI × Product</span>
+            <span className="tag">Build in public</span>
+          </div>
         </div>
-        <div className="about-avatar">
-          <img src="./avatar.jpg" alt="俊劫的头像" />
-          <span>KEEP CREATING.</span>
+        <div className="glass about-identity">
+          <div className="identity-avatar">a</div>
+          <h3>俊劫 / Alex</h3>
+          <span className="mono text-[11px] muted mt-3">@alexwjj</span>
+          <span className="muted text-[11px] mt-4">浙江 · 杭州</span>
+          <span className="mono text-[10px] tracking-wider muted mt-[22px]">
+            KEEP MAKING THINGS.
+          </span>
         </div>
       </section>
       <section className="about-principles">
-        {[
-          {
-            n: "01",
-            title: "保持好奇",
-            text: "试试新工具，也多问一句为什么。",
-          },
-          {
-            n: "02",
-            title: "动手创造",
-            text: "让想法离开脑海，成为真实的作品。",
-          },
-          {
-            n: "03",
-            title: "持续分享",
-            text: "记录过程，让经验产生新的连接。",
-          },
-        ].map((p) => (
-          <div key={p.n}>
-            <span>{p.n}</span>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
-          </div>
-        ))}
-      </section>
-      <SectionHeading
-        title="在这些地方找到我"
-        eyebrow="ELSEWHERE ON THE INTERNET"
-      />
-      <div className="social-links">
-        {[
-          {
-            name: "GitHub",
-            desc: "@alexwjj · 项目与代码",
-            href: profile.github,
-          },
-          { name: "掘金", desc: "俊劫 · 技术与实践", href: profile.juejin },
-          {
-            name: "Bilibili",
-            desc: "俊劫 · 前端与 Vibe Coding",
-            href: profile.bilibili,
-          },
-          { name: "X", desc: "@junjiezed · 日常与想法", href: profile.x },
-        ].map((s) => (
-          <OutLink href={s.href} key={s.name}>
-            <div>
-              <h3>{s.name}</h3>
-              <p>{s.desc}</p>
+        <SectionHeading title="我如何做事" eyebrow="LESS NOISE, MORE MAKING" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[38px] mt-6">
+          {[
+            {
+              title: "先弄清问题",
+              text: "多问一句为什么，把目标和约束说清楚，\n再决定该用什么方法。",
+            },
+            {
+              title: "把想法做小",
+              text: "从可验证的一步开始，让想法尽早\n进入真实使用，再持续打磨。",
+            },
+            {
+              title: "让经验流动",
+              text: "记录过程与取舍，把一次解决的问题，\n变成下一次可以复用的经验。",
+            },
+          ].map((p, i) => (
+            <div key={p.title}>
+              <span className="mono muted text-[10px]">0{i + 1}</span>
+              <h3 className="text-[19px] mt-[14px]">{p.title}</h3>
+              <p className="muted text-xs leading-[1.9] mt-3 whitespace-pre-line">
+                {p.text}
+              </p>
             </div>
-            <ArrowUpRight size={18} />
-          </OutLink>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
+      <section className="mt-[44px]">
+        <SectionHeading title="在这些地方找到我" />
+        <div className="social-links">
+          {[
+            {
+              name: "GitHub",
+              description: "@alexwjj · 项目与代码",
+              url: profile.github,
+              icon: "github",
+            },
+            {
+              name: "掘金",
+              description: "俊劫 · 技术与实践",
+              url: profile.juejin,
+              icon: "book",
+            },
+            {
+              name: "X",
+              description: "@junjiezed · AI 与日常观察",
+              url: profile.x,
+              icon: "x",
+            },
+          ].map((s) => (
+            <OutLink className="glass social-card" href={s.url} key={s.name}>
+              <Icon name={s.icon} size={24} />
+              <div>
+                <h3>{s.name}</h3>
+                <p>{s.description}</p>
+              </div>
+              <Icon name="arrow" size={14} className="ml-auto muted" />
+            </OutLink>
+          ))}
+        </div>
+      </section>
     </>
   );
 }
-
-function NotFound() {
-  return (
-    <div className="empty-state">
-      <Search size={32} />
-      <h1>这里还没有内容</h1>
-      <p>换个方向，继续探索。</p>
-      <Button nativeButton={false} render={<Link to="/" />}>
-        回到总览
-        <ArrowRight size={15} />
-      </Button>
-    </div>
-  );
-}
-
 function SearchDialog({
   open,
-  setOpen,
+  onClose,
 }: {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const { user } = useAuth();
-  const navigation = navigationFor(!!user?.isOwner);
+  const [sites, setSites] = useState<
+    { name: string; description: string; url: string }[]
+  >([]);
   const navigate = useNavigate();
-  const entries = [
-    ...navigation.map((n) => ({
-      title: n.name,
-      desc: n.en,
-      group: "页面",
-      path: n.to,
-    })),
-    ...tools.map((t) => ({
-      title: t.name,
-      desc: t.label,
-      group: "工具",
-      href: t.url,
-    })),
-    ...projects.map((p) => ({
-      title: p.name,
-      desc: p.description,
-      group: "作品",
-      href: p.url,
-    })),
-    ...workflows.map((w) => ({
-      title: w.name,
-      desc: w.description,
-      group: "工作流",
-      path: "/workflows",
-    })),
-    ...websites.map((w) => ({
-      title: w.name,
-      desc: w.description,
-      group: "网站",
-      href: w.href,
-    })),
-    ...resources.map(r => ({ title: r.name, desc: r.description, group: r.kind === "skill" ? "Skill" : "MCP", path: `/resources?kind=${r.kind}&q=${encodeURIComponent(r.name)}` })),
-  ];
-  const results = entries
-    .filter((e) =>
-      `${e.title} ${e.desc} ${e.group}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
-    )
-    .slice(0, query ? 30 : 11);
+  const { user } = useAuth();
   useEffect(() => {
     if (open) setQuery("");
   }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    api<{ sites: { name: string; description: string; url: string }[] }>(
+      "/api/discover",
+      { signal: controller.signal },
+    )
+      .then((result) => setSites(result.sites))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [open]);
+  const entries = [
+    ...navigation
+      .filter((n) => n.to !== "/admin" || user?.isOwner)
+      .map((n) => ({ title: n.name, description: "页面", path: n.to })),
+    ...projects.map((p) => ({
+      title: projectCopy[p.id]?.name || p.name,
+      description: `${p.name} · ${p.id} · ${p.description}`,
+      href: p.url,
+    })),
+    ...designFlows.map((flow) => ({
+      title: flow.title,
+      description: flow.description,
+      path: `/workflows?q=${encodeURIComponent(flow.title)}`,
+    })),
+    ...designTools.map((t) => ({
+      title: t.name,
+      description: t.description,
+      href: t.url,
+    })),
+    ...sites.map((site) => ({
+      title: site.name,
+      description: site.description,
+      href: site.url,
+    })),
+    ...resources.map((r) => ({
+      title: skillCopy[r.id]?.title || r.name,
+      description: `${r.name} · ${r.description}`,
+      path: `/resources?kind=${r.kind}&q=${encodeURIComponent(r.name)}`,
+    })),
+  ];
+  const shown = entries
+    .filter((r) =>
+      `${r.title} ${r.description}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
+    )
+    .slice(0, query ? 25 : 9);
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="search-dialog">
         <DialogHeader className="sr-only">
           <DialogTitle>搜索个人空间</DialogTitle>
           <DialogDescription>
-            搜索作品、工具、工作流、Skills 和 MCP。
+            搜索作品、工具、工作流与通用能力。
           </DialogDescription>
         </DialogHeader>
         <div className="search-input-wrap">
-          <Search size={20} />
-          <Input
+          <Icon name="search" size={19} />
+          <input
             autoFocus
             aria-label="搜索作品、工具、工作流"
-            placeholder="搜索作品、工具、Skills、MCP…"
+            placeholder="搜索作品、工具、知识…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
+              if (e.key === "Enter" && shown.length)
+                document.querySelector<HTMLElement>(".search-result")?.click();
               if (e.key === "ArrowDown") {
                 e.preventDefault();
-                document
-                  .querySelector<
-                    HTMLAnchorElement | HTMLButtonElement
-                  >(".search-result")
-                  ?.focus();
+                document.querySelector<HTMLElement>(".search-result")?.focus();
               }
-              if (e.key === "Enter" && results.length)
-                document
-                  .querySelector<
-                    HTMLAnchorElement | HTMLButtonElement
-                  >(".search-result")
-                  ?.click();
             }}
           />
           <kbd>ESC</kbd>
         </div>
-        <div className="search-results" aria-live="polite">
-          {results.length ? (
-            results.map((entry, i) => {
-              const body = (
-                <>
-                  <span className="search-result-icon">
-                    {entry.group === "作品" ? (
-                      <Layers3 size={17} />
-                    ) : entry.group === "工具" ? (
-                      <Terminal size={17} />
-                    ) : (
-                      <Search size={16} />
-                    )}
-                  </span>
-                  <div>
-                    <span>{entry.title}</span>
-                    <p>{entry.desc}</p>
-                  </div>
-                  <Badge variant="outline">{entry.group}</Badge>
-                  <ArrowUpRight size={14} />
-                </>
-              );
-              return "href" in entry ? (
-                <OutLink
-                  className="search-result"
-                  href={entry.href!}
-                  key={`${entry.title}-${i}`}
-                >
-                  {body}
-                </OutLink>
-              ) : (
-                <button
-                  key={`${entry.title}-${i}`}
-                  className="search-result"
-                  onClick={() => {
-                    navigate(entry.path);
-                    setOpen(false);
-                  }}
-                >
-                  {body}
-                </button>
-              );
-            })
-          ) : (
-            <div className="search-empty">
-              <Search size={26} />
-              <p>没有找到「{query}」</p>
-              <span>试试 Claude、作品、MCP 或写作。</span>
-            </div>
+        <div className="search-results">
+          {shown.map((r, i) =>
+            "href" in r ? (
+              <OutLink className="search-result" href={r.href!} key={i}>
+                <Icon name="search" size={17} />
+                <div>
+                  <strong>{r.title}</strong>
+                  <p>{r.description}</p>
+                </div>
+                <Icon name="arrow" size={14} />
+              </OutLink>
+            ) : (
+              <button
+                className="search-result"
+                key={i}
+                onClick={() => {
+                  navigate(r.path);
+                  onClose();
+                }}
+              >
+                <Icon name="search" size={17} />
+                <div>
+                  <strong>{r.title}</strong>
+                  <p>{r.description}</p>
+                </div>
+                <Icon name="arrow" size={14} />
+              </button>
+            ),
           )}
+          {!shown.length && <p className="search-empty">没有找到「{query}」</p>}
         </div>
         <div className="search-footer">
-          <span>搜索整个个人空间</span>
-          <span>
-            <kbd>tab</kbd> 切换 <kbd>↵</kbd> 打开
-          </span>
+          搜索整个个人空间<span>Tab 切换 · ↵ 打开</span>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-
-type Theme = "light" | "dark" | "system";
 function Shell() {
-  const { user } = useAuth();
-  const navigation = navigationFor(!!user?.isOwner);
+  const { user, loginEnabled, logout } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [currentTheme, setTheme] = useState(() => {
     try {
-      const saved = localStorage.getItem("alex-hub-theme");
-      return saved === "light" || saved === "dark" || saved === "system" ? saved : "light";
+      return localStorage.getItem("alex-hub-theme") === "dark"
+        ? "dark"
+        : "light";
     } catch {
       return "light";
     }
   });
+  const [discoverCount, setDiscoverCount] = useState(2);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "sidebar-collapsed",
+      sidebarCollapsed,
+    );
+    return () => document.documentElement.classList.remove("sidebar-collapsed");
+  }, [sidebarCollapsed]);
+  const [searchOpen, setSearchOpen] = useState(false),
+    [mobileOpen, setMobileOpen] = useState(false),
+    [accountOpen, setAccountOpen] = useState(false);
+  const { appearance, setAppearance } = useAppearance();
   const current = navigation.find((n) =>
     n.to === "/"
       ? location.pathname === "/"
       : location.pathname.startsWith(n.to),
   );
+  const breadcrumbLabel =
+    current?.to === "/resources"
+      ? new URLSearchParams(location.search).get("kind") === "mcp"
+        ? "能力库 · MCP"
+        : "能力库 · Skills"
+      : current?.name || "页面";
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => {
-      document.documentElement.classList.toggle(
-        "dark",
-        theme === "dark" || (theme === "system" && media.matches),
-      );
-      document.documentElement.style.colorScheme =
-        theme === "system" ? "light dark" : theme;
-      document.querySelector('meta[name="theme-color"]')?.setAttribute(
-        "content", document.documentElement.classList.contains("dark") ? "#000000" : "#ffffff",
-      );
+    let active = true;
+    api<{ sites: unknown[] }>("/api/discover")
+      .then((result) => {
+        if (active) setDiscoverCount(result.sites.length);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
     };
-    update();
-    media.addEventListener("change", update);
-    try {
-      localStorage.setItem("alex-hub-theme", theme);
-    } catch {
-      /* Browser storage is optional. */
-    }
-    return () => media.removeEventListener("change", update);
-  }, [theme]);
+  }, []);
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
+    document.documentElement.classList.toggle("dark", currentTheme === "dark");
+    document.documentElement.style.colorScheme = currentTheme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute(
+        "content",
+        currentTheme === "dark" ? "#141518" : "#F5F5F3",
+      );
+    try {
+      localStorage.setItem("alex-hub-theme", currentTheme);
+    } catch {
+      /* Storage is optional. */
+    }
+  }, [currentTheme]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setAccountOpen(false);
+    window.scrollTo({ top: 0 });
+    document.title = `${breadcrumbLabel} · alexwjj-hub`;
+  }, [location.pathname, breadcrumbLabel]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
         setSearchOpen((v) => !v);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
-  useEffect(() => {
-    setMobileOpen(false);
-    window.scrollTo({ top: 0 });
-    document.title = `${current?.name || "页面"} · 俊劫的个人空间`;
-  }, [location.pathname, current?.name]);
+  const navContent = (
+    <>
+      <Link to="/" className="brand">
+        <span className="brand-symbol">
+          <Icon name="terminal" size={21} />
+        </span>
+        <span>
+          <strong>alexwjj</strong>
+          <small>PERSONAL HUB</small>
+        </span>
+      </Link>
+      <div className="nav-label">工作空间</div>
+      <nav className="main-nav" aria-label="主导航">
+        {navigation.slice(0, 6).map((n) => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            end={n.to === "/"}
+            className={({ isActive }) =>
+              "nav-item " + (isActive ? "selected" : "")
+            }
+          >
+            <Icon name={n.icon} size={17} />
+            <span>{n.name}</span>
+            {n.count && (
+              <small>
+                {n.to === "/discover"
+                  ? String(discoverCount).padStart(2, "0")
+                  : n.count}
+              </small>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="nav-label mt-7">交流与记录</div>
+      <nav className="secondary-nav" aria-label="交流与记录">
+        {navigation
+          .slice(6)
+          .filter((n) => n.to !== "/admin" || user?.isOwner)
+          .map((n) => (
+            <NavLink
+              className={({ isActive }) =>
+                "nav-item " + (isActive ? "selected" : "")
+              }
+              key={n.to}
+              to={n.to}
+            >
+              <Icon name={n.icon} size={17} />
+              {n.name}
+            </NavLink>
+          ))}
+      </nav>
+      <div className="sidebar-bottom">
+        <div className="sidebar-status">
+          <span className="mono flex items-center gap-2 text-[11px]">
+            <i className="status-dot" />
+            Always building
+          </span>
+          <OutLink
+            href={profile.github}
+            className="flex items-center gap-2 text-xs mt-3"
+          >
+            <Icon name="github" size={15} />
+            GitHub
+            <Icon name="arrow" size={14} className="ml-auto" />
+          </OutLink>
+        </div>
+        <div className="account-row">
+          <Link to="/about" className="account-avatar">
+            a
+          </Link>
+          <Link to="/about">
+            <strong>俊劫 / Alex</strong>
+            <small>@alexwjj</small>
+          </Link>
+          <button
+            className="icon-button ml-auto"
+            aria-label="账户菜单"
+            onClick={() => setAccountOpen((v) => !v)}
+          >
+            <Icon name="chevrons" size={13} />
+          </button>
+          {accountOpen && (
+            <div className="account-menu glass">
+              {user ? (
+                <>
+                  <span className="muted text-xs">@{user.login}</span>
+                  {user.isOwner && (
+                    <>
+                      <Link to="/admin">作品数据</Link>
+                      <Link to="/admin?setup=1">接入 SDK</Link>
+                    </>
+                  )}
+                  <button
+                    onClick={() =>
+                      void logout().then(() => setAccountOpen(false))
+                    }
+                  >
+                    退出登录
+                  </button>
+                </>
+              ) : (
+                <a href="/api/auth/login">GitHub 登录</a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
   return (
     <TooltipProvider>
       <LiquidGlass />
+      <div className="app-wallpaper" aria-hidden="true" />
       <div className="app-shell">
-        <aside className="sidebar">
-          <Link to="/" className="brand">
-            <span className="brand-mark">
-              <Terminal size={24} />
-            </span>
-            <div>
-              <strong>
-                俊劫<span> / </span>
-              </strong>
-              <small>alexwjj</small>
-            </div>
-          </Link>
-          <nav className="main-nav" aria-label="主导航" data-active-index={navigation.findIndex(n => n.to === (current?.to || "/"))}>
-            <span className="nav-glass-indicator" aria-hidden="true" />
-            {navigation.map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.to === "/"}>
-                <n.icon size={18} />
-                <span>{n.name}</span>
-                {n.to === "/tools" && <span className="nav-count">05</span>}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="sidebar-bottom">
-            <OutLink href={profile.github} className="github-link">
-              <Github size={17} />
-              <span>GitHub</span>
-              <ArrowUpRight size={14} />
-            </OutLink>
-            <div className="sidebar-account"><AccountButton /></div>
-          </div>
+        <aside className="sidebar glass" inert={sidebarCollapsed}>
+          {navContent}
         </aside>
         <div className="main-wrapper">
-          <header className="topbar">
+          <header className="topbar glass">
+            <button
+              className="icon-button desktop-panel-icon"
+              aria-label="切换侧栏"
+              aria-expanded={!sidebarCollapsed}
+              onClick={() => setSidebarCollapsed((v) => !v)}
+            >
+              <Icon name="panel" size={18} />
+            </button>
+            <button
+              className="icon-button mobile-menu"
+              aria-label="打开导航"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Icon name="panel" size={18} />
+            </button>
             <div className="breadcrumb">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mobile-menu"
-                aria-label="打开导航"
-                onClick={() => setMobileOpen(true)}
-              >
-                <Menu size={20} />
-              </Button>
-              <PanelLeftClose size={17} className="desktop-panel-icon" />
-              <span className="breadcrumb-home">个人空间</span>
-              <ChevronRight size={13} />
-              <span>{current?.name || "工具手册"}</span>
-
+              <span>个人空间</span>
+              <span>/</span>
+              <strong>{breadcrumbLabel}</strong>
             </div>
             <div className="topbar-actions">
               <button
                 className="search-trigger"
-                onClick={() => setSearchOpen(true)}
                 aria-label="打开全局搜索"
+                onClick={() => setSearchOpen(true)}
               >
-                <Search size={15} />
-                <span>搜索任何内容…</span>
+                <Icon name="search" size={15} />
+                <span>搜索作品、工具、知识…</span>
                 <kbd>⌘ K</kbd>
               </button>
-              <div className="topbar-divider" />
-              <div className="theme-controls" data-theme={theme}>
-                <span className="theme-glass-indicator" aria-hidden="true" />
-                {(
-                  [
-                    { id: "light", label: "浅色主题", icon: Sun },
-                    { id: "dark", label: "深色主题", icon: Moon },
-                    { id: "system", label: "跟随系统", icon: Monitor },
-                  ] as const
-                ).map((t) => (
-                  <Tooltip key={t.id}>
-                    <TooltipTrigger
-                      render={
-                        <button
-                          className={theme === t.id ? "active" : ""}
-                          onClick={() => setTheme(t.id)}
-                          aria-label={t.label}
-                          aria-pressed={theme === t.id}
-                        />
-                      }
-                    >
-                      <t.icon size={15} />
-                    </TooltipTrigger>
-                    <TooltipContent>{t.label}</TooltipContent>
-                  </Tooltip>
-                ))}
+              <BackgroundSettings
+                appearance={appearance}
+                onChange={setAppearance}
+              />
+              <div className="theme-controls">
+                <button
+                  className={currentTheme === "light" ? "selected" : ""}
+                  aria-label="浅色主题"
+                  aria-pressed={currentTheme === "light"}
+                  onClick={() => setTheme("light")}
+                >
+                  <Icon name="sun" size={15} />
+                </button>
+                <button
+                  className={currentTheme === "dark" ? "selected" : ""}
+                  aria-label="深色主题"
+                  aria-pressed={currentTheme === "dark"}
+                  onClick={() => setTheme("dark")}
+                >
+                  <Icon name="moon" size={15} />
+                </button>
               </div>
-              <div className="profile-card topbar-profile">
-                <img src="./avatar.jpg" alt="俊劫的头像" />
-                <div>
-                  <strong>俊劫 / Alex</strong>
-                  <span>
-                    <i />
-                    保持热爱，持续创造
-                  </span>
-                </div>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={<Link to="/about" aria-label="关于俊劫" />}
-                  >
-                    <ChevronRight size={16} />
-                  </TooltipTrigger>
-                  <TooltipContent>关于我</TooltipContent>
-                </Tooltip>
-              </div>
+              {user ? (
+                <OutLink
+                  href={profile.github}
+                  className="icon-button"
+                  label="GitHub"
+                >
+                  <Icon name="github" size={18} />
+                </OutLink>
+              ) : (
+                <a
+                  className={
+                    "icon-button " + (!loginEnabled ? "opacity-50" : "")
+                  }
+                  aria-label="GitHub 登录"
+                  href="/api/auth/login"
+                >
+                  <Icon name="github" size={18} />
+                </a>
+              )}
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>
-            <div className="route-view" key={location.pathname} data-route={location.pathname}><Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/workflows" element={<Workflows />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/tools/:id" element={<Navigate to="/resources" replace />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/guestbook" element={<Guestbook />} />
-              <Route path="/admin" element={<OwnerDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes></div>
+            <div
+              className="route-view"
+              data-route={location.pathname}
+              key={location.pathname}
+            >
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/workflows" element={<Workflows />} />
+                <Route path="/tools" element={<Tools />} />
+                <Route
+                  path="/tools/:id"
+                  element={<Navigate to="/tools" replace />}
+                />
+                <Route path="/resources" element={<Resources />} />
+                <Route
+                  path="/capabilities"
+                  element={<Navigate to="/resources" replace />}
+                />
+                <Route
+                  path="/discover"
+                  element={<Discover onCountChange={setDiscoverCount} />}
+                />
+                <Route path="/guestbook" element={<Guestbook />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/admin" element={<OwnerDashboard />} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="data-placeholder">
+                      <h1>这里还没有内容</h1>
+                      <Link className="pill inline-flex mt-5" to="/">
+                        回到总览
+                        <Icon name="right" size={14} />
+                      </Link>
+                    </div>
+                  }
+                />
+              </Routes>
+            </div>
             <footer className="page-footer">
-              <span>
-                © 2026 俊劫 <span className="dot-divider">·</span> 保持所有热爱
+              <span>© 2026 alexwjj-hub · Made with curiosity.</span>
+              <span className="flex items-center gap-2">
+                <i className="status-dot" />
+                All systems operational
               </span>
             </footer>
           </main>
@@ -1184,49 +1528,33 @@ function Shell() {
       </div>
       <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
         <DialogContent className="mobile-nav-dialog">
-          <DialogHeader>
-            <DialogTitle>
-              <Terminal size={22} />
-              俊劫的个人空间
-            </DialogTitle>
-            <DialogDescription>作品、工具，与创造的方法。</DialogDescription>
+          <DialogHeader className="sr-only">
+            <DialogTitle>个人空间导航</DialogTitle>
+            <DialogDescription>作品、工具与发现。</DialogDescription>
           </DialogHeader>
-          <nav aria-label="移动端导航">
-            {navigation.map((n) => (
-              <NavLink
-                end={n.to === "/"}
-                to={n.to}
-                key={n.to}
-                onClick={() => setMobileOpen(false)}
-              >
-                <n.icon size={20} />
-                {n.name}
-                <ArrowRight size={15} />
-              </NavLink>
-            ))}
-          </nav>
-          <div className="sidebar-account"><AccountButton /></div>
+          {navContent}
         </DialogContent>
       </Dialog>
-      <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </TooltipProvider>
   );
 }
-
 export default function App() {
   return (
-    <HashRouter><AuthProvider>
-      <a
-        href="#main-content"
-        className="skip-link"
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById("main-content")?.focus();
-        }}
-      >
-        跳到主要内容
-      </a>
-      <Shell />
-    </AuthProvider></HashRouter>
+    <HashRouter>
+      <AuthProvider>
+        <a
+          className="skip-link"
+          href="#main-content"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("main-content")?.focus();
+          }}
+        >
+          跳到主要内容
+        </a>
+        <Shell />
+      </AuthProvider>
+    </HashRouter>
   );
 }

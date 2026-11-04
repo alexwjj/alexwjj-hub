@@ -15,7 +15,7 @@ npm run dev
 - `src/data.ts`：个人介绍、工具入口、AI 网站与工作流。
 - `src/content/projects.json`：公开作品清单、分类、域名和稳定项目 ID。慢变化的数据直接改文件。
 - `src/Hub.tsx`、`src/styles.css`：主站界面，shadcn/ui（Base UI）、黑白与系统主题、全局搜索、响应式布局。
-- `src/LiquidGlass.tsx`、`src/liquid-glass.css`：跟随 DOM 的透镜折射、玻璃材质与弹簧动效；默认日间主题，支持深色与系统主题。
+- `src/LiquidGlass.tsx`、`src/styles.css`：跟随 DOM 的透镜折射、玻璃材质与弹簧动效；默认日间主题，支持深色与系统主题。
 - `src/content/resources.ts`：独立、跨工具的公开 Skills 与 MCP 清单，按任务分类。
 - `src/account.tsx`：GitHub 登录状态、留言、站长数据后台。
 - `sdk/`：无运行时依赖的浏览器统计 SDK。构建时复制到 `/sdk/hub.js`。
