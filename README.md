@@ -101,3 +101,6 @@ ego-browser nodejs < scripts/glass-smoke.mjs
 按钮有按压与阻尼回弹；菜单、主题和 Skills / MCP 标签使用滑动玻璃指示层，内容切换带短淡入。尊重减少动态效果和减少透明度设置。`alex-hub-theme` 保存本版主题选择，首次打开默认日间。
 
 文章页面和入门手册已删除；工具直接链接到公开入口。能力库来自本机已安装的公开技能与通用 MCP 配置，安装或配置不代表日常使用频率。公开数据不包含内部工具、服务器地址、凭据或个人路径。
+
+
+国内渠道：各项目应按访问网站的 hostname 动态选取 SDK 来源，`weightbook.icu` 及其子域使用 `https://alexwjj-hub.weightbook.icu`，其他域使用 Vercel 入口。请从站长后台复制最新的自动选择代码，避免使用旧的固定 Vercel 域名片段。SDK 会将数据发往自身来源域名的 `/api/collect`；同一项目 ID 汇总到同一份数据。
