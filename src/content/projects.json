@@ -58,7 +58,8 @@
     "url": "https://j-lab-photos.vercel.app/",
     "kind": "chart",
     "origins": [
-      "https://j-lab-photos.vercel.app"
+      "https://j-lab-photos.vercel.app",
+      "jlabphotos://desktop"
     ],
     "visibility": "public"
   },
