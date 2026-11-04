@@ -2821,3 +2821,24 @@ div.input-shell {
     gap: 8px;
   }
 }
+body,
+.glass,
+.nav-item,
+.pill,
+.theme-controls button,
+.segment button {
+  transition-property: background-color, color, box-shadow, border-color;
+  transition-duration: 0.25s;
+}
+.dark .pill:not(.primary),
+.dark .text-link,
+.dark .background-trigger,
+.dark .tool-shortcut p,
+.dark .featured-info > p,
+.dark .resource-card > p,
+.dark .social-card p,
+.dark .workflow-feature p,
+.dark .workflow-small p,
+.dark .tool-detail-card > p {
+  color: var(--body-text);
+}
