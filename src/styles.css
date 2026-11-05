@@ -259,6 +259,25 @@ button svg {
   font-size: 18px;
   font-weight: 500;
 }
+.brand-symbol,
+.identity-avatar,
+.account-avatar img {
+  object-fit: cover;
+}
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.account-login-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
 .account-row strong {
   display: block;
   font-size: 12px;

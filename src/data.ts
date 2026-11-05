@@ -4,6 +4,7 @@ export type ToolId = "claude" | "codex" | "pi" | "pencil" | "warp";
 export type Entry = { name: string; description: string; href?: string; status?: string };
 export type Tool = { id: ToolId; name: string; label: string; description: string; url: string; category: string };
 export const profile = {
+  avatar: "/avatar.jpg",
   name: "俊劫", handle: "alexwjj", tagline: "开发者 / AIGC 探索者 / 持续创造",
   github: "https://github.com/alexwjj", blog: "https://alexwjj.github.io/",
   portfolio: "https://alexwjj.weightbook.icu/", juejin: "https://juejin.cn/user/3386151545609837/posts",

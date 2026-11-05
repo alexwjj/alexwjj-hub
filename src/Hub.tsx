@@ -1016,7 +1016,13 @@ function About() {
           </div>
         </div>
         <div className="glass about-identity">
-          <div className="identity-avatar">a</div>
+          <img
+            className="identity-avatar"
+            src={profile.avatar}
+            alt="俊劫的微信头像"
+            width={108}
+            height={108}
+          />
           <h3>俊劫 / Alex</h3>
           <span className="mono text-[11px] muted mt-3">@alexwjj</span>
           <span className="muted text-[11px] mt-4">浙江 · 杭州</span>
@@ -1317,9 +1323,13 @@ function Shell() {
   const navContent = (
     <>
       <Link to="/" className="brand">
-        <span className="brand-symbol">
-          <Icon name="terminal" size={21} />
-        </span>
+        <img
+          className="brand-symbol"
+          src={profile.avatar}
+          alt="俊劫的头像"
+          width={36}
+          height={36}
+        />
         <span>
           <strong>alexwjj</strong>
           <small>PERSONAL HUB</small>
@@ -1395,52 +1405,64 @@ function Shell() {
         </div>
         <div className="account-row">
           <Link to="/about" className="account-avatar">
-            a
+            <img src={profile.avatar} alt="俊劫的头像" width={32} height={32} />
           </Link>
-          <Link to="/about">
-            <strong>俊劫 / Alex</strong>
-            <small>@alexwjj</small>
-          </Link>
-          <button
-            className="icon-button ml-auto"
-            aria-label="账户菜单"
-            aria-expanded={accountOpen}
-            onClick={() => {
-              setAccountError("");
-              setAccountOpen((v) => !v);
-            }}
-          >
-            <Icon name="chevrons" size={13} />
-          </button>
-          {accountOpen && (
+          {user ? (
+            <>
+              <Link to="/about">
+                <strong>俊劫 / Alex</strong>
+                <small>@alexwjj</small>
+              </Link>
+              <button
+                className="icon-button ml-auto"
+                aria-label="账户菜单"
+                aria-expanded={accountOpen}
+                onClick={() => {
+                  setAccountError("");
+                  setAccountOpen((v) => !v);
+                }}
+              >
+                <Icon name="chevrons" size={13} />
+              </button>
+            </>
+          ) : (
+            <a
+              className={
+                "account-login-link " + (!loginEnabled ? "opacity-50" : "")
+              }
+              href="/api/auth/login"
+              aria-disabled={!loginEnabled}
+              onClick={(event) => !loginEnabled && event.preventDefault()}
+            >
+              <Icon name="github" size={15} />
+              GitHub 登录
+            </a>
+          )}
+          {accountOpen && user && (
             <div className="account-menu glass">
-              {user ? (
-                <>
-                  <span className="muted text-xs">@{user.login}</span>
-                  {user.isOwner && (
-                    <>
-                      <Link to="/admin">作品数据</Link>
-                      <Link to="/admin?setup=1">接入 SDK</Link>
-                    </>
-                  )}
-                  <button
-                    onClick={() =>
-                      void logout()
-                        .then(() => setAccountOpen(false))
-                        .catch(() => setAccountError("退出失败，请稍后重试"))
-                    }
-                  >
-                    退出登录
-                  </button>
-                  {accountError && (
-                    <p className="text-[11px] text-destructive" role="alert">
-                      {accountError}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <a href="/api/auth/login">GitHub 登录</a>
-              )}
+              <>
+                <span className="muted text-xs">@{user.login}</span>
+                {user.isOwner && (
+                  <>
+                    <Link to="/admin">作品数据</Link>
+                    <Link to="/admin?setup=1">接入 SDK</Link>
+                  </>
+                )}
+                <button
+                  onClick={() =>
+                    void logout()
+                      .then(() => setAccountOpen(false))
+                      .catch(() => setAccountError("退出失败，请稍后重试"))
+                  }
+                >
+                  退出登录
+                </button>
+                {accountError && (
+                  <p className="text-[11px] text-destructive" role="alert">
+                    {accountError}
+                  </p>
+                )}
+              </>
             </div>
           )}
         </div>
@@ -1517,25 +1539,6 @@ function Shell() {
                   <Icon name="moon" size={15} />
                 </button>
               </GlassGroup>
-              {user ? (
-                <OutLink
-                  href={profile.github}
-                  className="icon-button"
-                  label="GitHub"
-                >
-                  <Icon name="github" size={18} />
-                </OutLink>
-              ) : (
-                <a
-                  className={
-                    "icon-button " + (!loginEnabled ? "opacity-50" : "")
-                  }
-                  aria-label="GitHub 登录"
-                  href="/api/auth/login"
-                >
-                  <Icon name="github" size={18} />
-                </a>
-              )}
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>
