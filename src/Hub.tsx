@@ -205,7 +205,7 @@ function Home() {
           </OutLink>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Link className="glass mini-project" to="/workflows">
-              <Icon name="workflow" size={21} />
+              <Icon name="workflow" size={19} />
               <div>
                 <h3>AI DevFlow</h3>
                 <p>从需求到交付的 AI 开发实践</p>
@@ -213,7 +213,7 @@ function Home() {
               <Icon name="arrow" size={13} className="ml-auto muted" />
             </Link>
             <Link className="glass mini-project" to="/projects">
-              <Icon name="panels" size={21} />
+              <Icon name="panel-top" size={19} />
               <div>
                 <h3>UI Lab</h3>
                 <p>界面实验与交互灵感</p>
@@ -227,7 +227,7 @@ function Home() {
             <MoreLink to="/workflows">全部工作流</MoreLink>
           </SectionHeading>
           <Link className="glass home-flow" to="/workflows">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <div>
                 <h3>从想法到上线</h3>
                 <p className="mt-2 muted text-[11px]">我的日常 AI 开发路径</p>
@@ -279,11 +279,11 @@ function Home() {
                 MCP <span>06</span>
               </button>
             </GlassGroup>
-            <Icon name="bookmark" size={18} className="muted" />
+            <Icon name="bookmark" size={13} className="muted self-center" />
           </div>
           <div
             key={kind}
-            className="liquid-content grid grid-cols-2 gap-8 mt-[17px] max-sm:grid-cols-1"
+            className="liquid-content grid grid-cols-2 gap-10 mt-2 max-sm:grid-cols-1"
           >
             {(kind === "Skills"
               ? [
@@ -307,8 +307,16 @@ function Home() {
                 key={r.name}
               >
                 <Icon
-                  name={r.name === "superpowers" ? "sparkles" : "blocks"}
-                  size={20}
+                  name={
+                    r.name === "frontend-design"
+                      ? "layout"
+                      : r.name === "GitHub"
+                        ? "github"
+                        : r.name === "Pencil"
+                          ? "pencil"
+                          : "sparkles"
+                  }
+                  size={16}
                 />
                 <div>
                   <h3 className="mono text-[13px] font-medium">{r.name}</h3>
@@ -547,7 +555,7 @@ function Workflows() {
               <span className="tag">5 steps</span>
               <span className="tag">AI assisted</span>
             </div>
-            <p className="!text-[11px] mt-auto">
+            <p className="workflow-audience !text-[11px]">
               适合新功能、个人项目与小型产品验证。
             </p>
             <button
@@ -671,11 +679,13 @@ function Tools() {
             detail: "真实页面验证",
             icon: "globe",
           },
-          { name: "交付", tool: "GitHub", icon: "git" },
-          { name: "部署", tool: "Vercel", icon: "triangle" },
+          { name: "交付", tool: "GitHub", icon: "pull-request" },
+          { name: "部署", tool: "Vercel", icon: "cloud-upload" },
         ].map((step) => (
           <div className="pipeline-step" key={step.name}>
-            <Icon name={step.icon} size={21} />
+            <span className="soft-icon">
+              <Icon name={step.icon} size={19} />
+            </span>
             <small>{step.name}</small>
             <strong>{step.tool}</strong>
             {step.detail && <span>{step.detail}</span>}
@@ -693,26 +703,27 @@ function Tools() {
           : shown.slice(0, 8)
         ).map((tool) => (
           <article className="glass tool-detail-card" key={tool.id}>
-            <div className="flex items-center gap-3">
-              <Icon name={tool.icon} size={21} />
-              <h2>{tool.name}</h2>
-              <span className="ml-auto mono muted text-[10px]">
-                {tool.platform}
-              </span>
-            </div>
-            <p>{tool.description}</p>
-            <div className="flex items-center gap-4 mt-auto pt-5">
-              <span className="muted text-[10px]">{tool.category}</span>
-              <OutLink href={tool.docs} className="muted text-[10px]">
-                使用说明
-              </OutLink>
-              <OutLink
-                href={tool.url}
-                className="text-link ml-auto !text-[11px]"
-              >
-                打开工具
-                <Icon name="arrow" size={13} />
-              </OutLink>
+            <span className="soft-icon">
+              <Icon name={tool.icon} size={23} />
+            </span>
+            <div className="tool-details">
+              <div className="flex items-center gap-3">
+                <h2>{tool.name}</h2>
+                <span className="ml-auto mono muted text-[10px]">
+                  {tool.platform}
+                </span>
+              </div>
+              <p>{tool.description}</p>
+              <div className="tool-actions">
+                <span className="muted text-[10px]">{tool.category}</span>
+                <OutLink href={tool.docs} className="ml-auto muted text-[10px]">
+                  使用说明
+                </OutLink>
+                <OutLink href={tool.url} className="text-link !text-[11px]">
+                  打开工具
+                  <Icon name="arrow" size={13} />
+                </OutLink>
+              </div>
             </div>
           </article>
         ))}
@@ -788,7 +799,7 @@ function Resources() {
         }
       />
       <div className="page-controls capabilities-controls !mb-5">
-        <GlassGroup className="segment">
+        <GlassGroup className="glass segment">
           <button
             className={kind === "skill" ? "selected" : ""}
             aria-pressed={kind === "skill"}
@@ -848,8 +859,14 @@ function Resources() {
             {kind === "skill" ? `${matches.length} 项能力` : ""}
           </span>
         </div>
-        <span className="text-[11px] muted">
-          {kind === "skill" ? "常用优先" : "按用途查看工具与配置方式"}
+        <span className="flex items-center gap-3 text-[11px] muted">
+          {kind === "skill" ? (
+            <>
+              常用优先 <Icon name="filter" size={13} />
+            </>
+          ) : (
+            "按用途查看工具与配置方式"
+          )}
         </span>
       </div>
       <div
@@ -866,7 +883,9 @@ function Resources() {
             <article className="glass resource-card" key={resource.id}>
               {kind === "mcp" ? (
                 <div className="flex items-center gap-2.5">
-                  <Icon name={mcpIcons[resource.id] || "box"} size={20} />
+                  <span className="soft-icon">
+                    <Icon name={mcpIcons[resource.id] || "box"} size={20} />
+                  </span>
                   <h2 className="!m-0 !text-xl !leading-6">{resource.name}</h2>
                   <span className="ml-auto muted text-[10px]">
                     {resource.category}
@@ -1016,17 +1035,22 @@ function About() {
           </div>
         </div>
         <div className="glass about-identity">
-          <img
-            className="identity-avatar"
-            src={profile.avatar}
-            alt="俊劫的微信头像"
-            width={108}
-            height={108}
-          />
-          <h3>俊劫 / Alex</h3>
-          <span className="mono text-[11px] muted mt-3">@alexwjj</span>
-          <span className="muted text-[11px] mt-4">浙江 · 杭州</span>
-          <span className="mono text-[10px] tracking-wider muted mt-[22px]">
+          <span className="glass identity-avatar">
+            <img
+              src={profile.avatar}
+              alt="俊劫的微信头像"
+              width={102}
+              height={102}
+            />
+          </span>
+          <div className="identity-name">
+            <h3>俊劫 / Alex</h3>
+            <span className="mono text-[11px] muted">@alexwjj</span>
+          </div>
+          <span className="identity-location muted text-[11px]">
+            <Icon name="map-pin" size={13} /> 浙江 · 杭州
+          </span>
+          <span className="mono text-[10px] tracking-wider muted">
             KEEP MAKING THINGS.
           </span>
         </div>
@@ -1082,7 +1106,16 @@ function About() {
             },
           ].map((s) => (
             <OutLink className="glass social-card" href={s.url} key={s.name}>
-              <Icon name={s.icon} size={24} />
+              {s.name === "X" ? (
+                <span
+                  aria-hidden="true"
+                  className="text-[23px] leading-[31px] muted"
+                >
+                  𝕏
+                </span>
+              ) : (
+                <Icon name={s.icon} size={24} />
+              )}
               <div>
                 <h3>{s.name}</h3>
                 <p>{s.description}</p>
@@ -1326,7 +1359,7 @@ function Shell() {
         <img
           className="brand-symbol"
           src={profile.avatar}
-          alt="俊劫的头像"
+          alt=""
           width={36}
           height={36}
         />
@@ -1404,11 +1437,16 @@ function Shell() {
           </OutLink>
         </div>
         <div className="account-row">
-          <Link to="/about" className="account-avatar">
-            <img src={profile.avatar} alt="俊劫的头像" width={32} height={32} />
-          </Link>
           {user ? (
             <>
+              <Link to="/about" className="account-avatar">
+                <img
+                  src="/design/account-monogram.webp"
+                  alt="关于俊劫"
+                  width={32}
+                  height={32}
+                />
+              </Link>
               <Link to="/about">
                 <strong>俊劫 / Alex</strong>
                 <small>@alexwjj</small>
@@ -1434,7 +1472,9 @@ function Shell() {
               aria-disabled={!loginEnabled}
               onClick={(event) => !loginEnabled && event.preventDefault()}
             >
-              <Icon name="github" size={15} />
+              <span className="account-avatar">
+                <Icon name="github" size={17} />
+              </span>
               GitHub 登录
             </a>
           )}
@@ -1539,6 +1579,13 @@ function Shell() {
                   <Icon name="moon" size={15} />
                 </button>
               </GlassGroup>
+              <OutLink
+                href={profile.github}
+                label="在 GitHub 查看 alexwjj"
+                className="icon-button"
+              >
+                <Icon name="github" size={18} />
+              </OutLink>
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>

@@ -22,12 +22,30 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
-  Code2,
+  Code,
+  CloudUpload,
+  Link2,
+  CircleCheck,
+  MessageCircle,
+  MessagesSquare,
+  ScanText,
+  Library,
+  MapPin,
+  CalendarDays,
+  Clock3,
+  Eye,
+  LockKeyhole,
+  MousePointer2,
+  TriangleAlert,
+  UsersRound,
+  GitPullRequest,
+  LayoutTemplate,
+  PanelTop,
   Command,
   Compass,
   FileText,
   GitBranch,
-  Globe2,
+  Globe,
   Heart,
   Image,
   Layers,
@@ -56,22 +74,21 @@ import {
   Workflow,
   X,
 } from "lucide-react";
-import type { ReactNode, SVGProps } from "react";
+import type { ReactNode } from "react";
 import { GlassGroup, GlassIndicator } from "./GlassMotion";
 function Github({
   size = 18,
-  ...props
-}: SVGProps<SVGSVGElement> & { size?: number }) {
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      {...props}
-    >
-      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.98a9.6 9.6 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.59c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
-    </svg>
+    <span
+      aria-hidden="true"
+      className={`github-mark ${className || ""}`}
+      style={{ width: size, height: size }}
+    />
   );
 }
 export const icons = {
@@ -94,17 +111,35 @@ export const icons = {
   briefcase: BriefcaseBusiness,
   chart: ChartNoAxesCombined,
   check: Check,
+  "circle-check": CircleCheck,
+  "message-circle": MessageCircle,
+  messages: MessagesSquare,
+  "scan-text": ScanText,
+  library: Library,
+  link: Link2,
   down: ChevronDown,
   left: ChevronLeft,
   next: ChevronRight,
   chevrons: ChevronsUpDown,
-  code: Code2,
+  code: Code,
+  "map-pin": MapPin,
+  "cloud-upload": CloudUpload,
   command: Command,
   compass: Compass,
   file: FileText,
   git: GitBranch,
   github: Github,
-  globe: Globe2,
+  views: Eye,
+  users: UsersRound,
+  pointer: MousePointer2,
+  clock: Clock3,
+  alert: TriangleAlert,
+  calendar: CalendarDays,
+  lock: LockKeyhole,
+  "pull-request": GitPullRequest,
+  layout: LayoutTemplate,
+  "panel-top": PanelTop,
+  globe: Globe,
   heart: Heart,
   image: Image,
   layers: Layers,

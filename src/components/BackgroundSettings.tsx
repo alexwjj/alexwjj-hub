@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Icon } from "./hub-ui";
 import { AnimatePresence, motion } from "motion/react";
@@ -8,6 +8,9 @@ export const wallpapers = [
   { id: "clouds", name: "云间微光", file: "03-cloud-light.png" },
   { id: "pearl", name: "珍珠弧面", file: "04-pearl-arcs.png" },
 ];
+function presetStrength(id: string) {
+  return id === "silver" ? 35 : 50;
+}
 export function Wallpaper({ id }: { id: string }) {
   const wallpaper = wallpapers.find((item) => item.id === id) || wallpapers[0];
   return (
@@ -102,14 +105,23 @@ export function BackgroundSettings({
                     "wallpaper-choice " +
                     (appearance.wallpaper === p.id ? "chosen" : "")
                   }
-                  onClick={() => onChange({ ...appearance, wallpaper: p.id })}
+                  onClick={() =>
+                    onChange({
+                      wallpaper: p.id,
+                      strength:
+                        appearance.strength ===
+                        presetStrength(appearance.wallpaper)
+                          ? presetStrength(p.id)
+                          : appearance.strength,
+                    })
+                  }
                   aria-pressed={appearance.wallpaper === p.id}
                 >
                   <img src={"/design/wallpapers/" + p.file} alt="" />
                   <span>
                     {p.name}
                     {appearance.wallpaper === p.id && (
-                      <Icon name="check" size={13} />
+                      <Icon name="circle-check" size={15} />
                     )}
                   </span>
                 </button>
@@ -125,6 +137,11 @@ export function BackgroundSettings({
               <input
                 className="w-full mt-[18px] accent-[#8c929c]"
                 type="range"
+                style={
+                  {
+                    "--range-progress": appearance.strength + "%",
+                  } as CSSProperties
+                }
                 min="0"
                 max="100"
                 value={appearance.strength}

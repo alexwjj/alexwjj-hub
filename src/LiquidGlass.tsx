@@ -9,7 +9,7 @@ const interactiveSelector =
 
 // A rounded lens displacement map. It is generated in element coordinates,
 // so the browser compositor moves the glass and its content together on scroll.
-function lensMap(width: number, height: number, radius: number) {
+function lensMap(width: number, height: number, radius: number, bend: number) {
   const scale = Math.min(1.5, 420 / Math.max(width, height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(width * scale));
@@ -17,9 +17,13 @@ function lensMap(width: number, height: number, radius: number) {
   const context = canvas.getContext("2d");
   if (!context) return null;
   const pixels = context.createImageData(canvas.width, canvas.height);
-  const bevel = Math.min(22, height * 0.3, radius * 0.85);
+  // The Pencil material bends the sampled backdrop toward the centre over 13px.
+  // Small interactive lenses without a material layer keep their convex profile.
+  const bevel = bend ? 65 : Math.min(22, height * 0.3, radius * 0.85);
   const profile = Array.from({ length: 256 }, (_, i) =>
-    refractedOffset((i / 255) * bevel, bevel),
+    bend
+      ? bend * Math.exp((-(i / 255) * bevel) / 13)
+      : refractedOffset((i / 255) * bevel, bevel),
   );
   const displacement = Math.max(...profile, 1);
   for (let y = 0; y < canvas.height; y++) {
@@ -87,15 +91,19 @@ export function LiquidGlass() {
       const width = element.offsetWidth,
         height = element.offsetHeight;
       if (!width || !height) return;
+      const style = getComputedStyle(element);
+      const bend = element.matches(".glass")
+        ? Number(style.getPropertyValue("--glass-bend"))
+        : 0;
       const radius = Math.min(
-        parseFloat(getComputedStyle(element).borderTopLeftRadius) || 16,
+        parseFloat(style.borderTopLeftRadius) || 16,
         width / 2,
         height / 2,
       );
-      const key = `${width}:${height}:${radius}`;
+      const key = `${width}:${height}:${radius}:${bend}`;
       let id = filters.get(key);
       if (!id) {
-        const map = lensMap(width, height, radius);
+        const map = lensMap(width, height, radius, bend);
         if (!map) return;
         id = `hub-lens-${++nextId}`;
         const filter = node("filter", {
@@ -110,7 +118,7 @@ export function LiquidGlass() {
         filter.append(
           node("feGaussianBlur", {
             in: "SourceGraphic",
-            stdDeviation: height < 90 ? "0.5" : "3",
+            stdDeviation: bend ? "1.4" : "0.5",
             result: "backdrop",
           }),
         );
@@ -140,7 +148,7 @@ export function LiquidGlass() {
       }
       element.style.setProperty(
         "--glass-backdrop",
-        `url("#${id}") saturate(1.12)`,
+        `url("#${id}") ${bend ? "brightness(.98)" : "saturate(1.12)"}`,
       );
       element.dataset.glass = "lens";
     };

@@ -217,14 +217,14 @@ export function Discover({
                   <Icon name="pin" size={16} className="ml-auto" />
                 )}
               </div>
-              <div className="flex items-center justify-between mt-[22px]">
+              <div className="flex items-center justify-between mt-5">
                 <h2>{site.name}</h2>
                 <span className="mono text-[11px] muted">
                   {String(i + 1).padStart(2, "0")}
                 </span>
               </div>
-              <p className="mt-[25px]">{site.description}</p>
-              <span className="mono text-[11px] muted mt-[22px]">
+              <p className="mt-5">{site.description}</p>
+              <span className="mono text-[11px] muted mt-5">
                 {site.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
               </span>
               <div className="flex justify-between items-center mt-auto pt-7">
@@ -268,7 +268,7 @@ export function Discover({
       {!fetching && !shown.length && (
         <div className="glass p-10 text-center muted">没有找到匹配的网站。</div>
       )}
-      <div className="mt-[44px]">
+      <div className="mt-12">
         <SectionHeading title="再多一点新鲜感">
           <p className="muted text-xs mr-auto ml-3">
             挑一个感兴趣的，加入自己的收藏。
@@ -285,14 +285,14 @@ export function Discover({
             .map((site) => (
               <article key={site.url} className="glass recommendation-card">
                 <div className="flex justify-between muted">
-                  <Icon name={site.icon} size={26} />
+                  <Icon name={site.icon} size={22} />
                   <span className="text-[10px]">{site.category}</span>
                 </div>
-                <h3 className="text-lg mt-[22px]">{site.name}</h3>
+                <h3 className="text-lg mt-4">{site.name}</h3>
                 <p className="muted text-xs leading-[1.8] mt-4">
                   {site.description}
                 </p>
-                <span className="mono muted text-[9px] mt-[25px]">
+                <span className="mono muted text-[9px] mt-4">
                   {site.url.replace(/^https?:\/\//, "")}
                 </span>
                 <div className="flex justify-between mt-auto pt-7">
@@ -325,7 +325,7 @@ export function Discover({
             ))}
         </div>
       </div>
-      <p className="muted text-[11px] mt-6">
+      <p className="muted text-[11px] mt-10">
         随时添加、编辑或固定网站，让这里慢慢变成你的日常入口。
       </p>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -343,12 +343,14 @@ export function Discover({
               e.preventDefault();
               void save();
             }}
-            className="flex flex-col flex-1 mt-5 gap-5"
+            className="flex flex-col flex-1 gap-5"
           >
             <label className="form-label">
               网站链接
               <div className="flex input-shell">
+                <Icon name="link" size={15} />
                 <input
+                  className="mono"
                   type="url"
                   required
                   placeholder="https://example.com"
@@ -447,7 +449,7 @@ export function Discover({
                 {formError}
               </p>
             )}
-            <div className="flex justify-end gap-3 mt-auto pt-7">
+            <div className="flex justify-end gap-2.5 mt-auto pt-5 border-t border-border">
               <button
                 type="button"
                 className="pill"

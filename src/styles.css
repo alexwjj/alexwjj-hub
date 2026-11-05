@@ -14,6 +14,7 @@
   --input: #d4d7de;
   --ring: #929aaa;
   --glass-fill: #ffffff6b;
+  --glass-rim: inset -1px -1px 3px #65656512;
   --glass-edge: #ffffffad;
   --glass-shadow: 0 12px 30px #252b3514, inset 0 1px 1px #ffffffcc;
   --shadow: 0 12px 30px #252b3514;
@@ -35,6 +36,9 @@
   --border: #ffffff18;
   --input: #ffffff28;
   --glass-fill: #1d20275c;
+  --glass-color: 29 32 39;
+  --glass-opacity: 0.36;
+  --glass-rim: inset 2px 3px 5px -3px #ffffff38, inset -2px -2px 3px -2px #0005;
   --glass-edge: #ffffff24;
   --glass-shadow: 0 12px 30px #0002, inset 0 1px 1px #ffffff15;
   --shadow: 0 12px 30px #0003;
@@ -96,20 +100,119 @@ button svg {
 }
 @utility glass {
   position: relative;
-  background: var(--glass-fill);
+  background: rgb(
+    var(--glass-color, 254 254 254) /
+      var(--glass-opacity, var(--glass-tint, 0.68))
+  );
   border: 0;
   outline: 1px solid var(--glass-edge);
   outline-offset: -1px;
-  border-radius: 30px;
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-backdrop, blur(18px) saturate(1.08));
-  backdrop-filter: var(--glass-backdrop, blur(18px) saturate(1.08));
+  border-radius: 26px;
+  box-shadow: var(--glass-shadow), var(--glass-rim);
+  -webkit-backdrop-filter: var(--glass-backdrop, blur(1.5px) brightness(0.98));
+  backdrop-filter: var(--glass-backdrop, blur(1.5px) brightness(0.98));
 }
 @utility muted {
   color: var(--body-text);
 }
 @utility mono {
   font-family: "IBM Plex Mono", monospace;
+}
+/* The additive highlight from liquid-glass.glsl, sliced at 2x so only the
+   straight edges stretch. The DOM and its sampled backdrop remain live. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  clip-path: border-box;
+  border: 1px solid transparent;
+  border-image: url("/design/glass-rim.png") 84 / 42px;
+  pointer-events: none;
+}
+.dark .glass::before {
+  opacity: 0.32;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass::before {
+    display: none;
+  }
+}
+/* Tint and refraction are the material uniforms on the corresponding Pencil layers. */
+.glass {
+  --glass-bend: 8;
+}
+.sidebar,
+.status-front {
+  --glass-tint: 0.42;
+}
+.sidebar,
+.about-identity,
+.status-back,
+.featured-project,
+.background-panel {
+  --glass-bend: 10;
+}
+.sidebar,
+.topbar {
+  border-radius: 30px;
+}
+.topbar,
+.guestbook-note {
+  --glass-tint: 0.48;
+  --glass-bend: 9;
+}
+.status-front {
+  --glass-bend: 12;
+}
+.status-back {
+  --glass-tint: 0.16;
+}
+.tool-shortcut {
+  --glass-tint: 0.4;
+}
+.featured-project {
+  --glass-tint: 0.5;
+}
+.mini-project {
+  --glass-tint: 0.52;
+  --glass-bend: 7;
+}
+.home-flow {
+  --glass-tint: 0.74;
+}
+.capability-summary,
+.attention-panel {
+  --glass-tint: 0.76;
+}
+.guestbook-empty {
+  --glass-tint: 0.6;
+}
+.about-identity {
+  --glass-tint: 0.38;
+}
+.discover-card {
+  --glass-tint: 0.61;
+  --glass-bend: 9;
+}
+.traffic-chart,
+.pages-panel {
+  --glass-tint: 0.8;
+}
+.background-panel {
+  --glass-tint: 0.97;
+}
+.featured-project,
+.home-flow,
+.about-identity,
+.background-panel {
+  border-radius: 28px;
+}
+.github-mark {
+  display: inline-block;
+  flex-shrink: 0;
+  background: currentColor;
+  mask: url("/design/github-mark.webp") center / 85% 92% no-repeat;
 }
 .app-wallpaper {
   position: fixed;
@@ -260,7 +363,6 @@ button svg {
   font-weight: 500;
 }
 .brand-symbol,
-.identity-avatar,
 .account-avatar img {
   object-fit: cover;
 }
@@ -270,6 +372,7 @@ button svg {
   border-radius: inherit;
 }
 .account-login-link {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -508,7 +611,7 @@ button svg {
   gap: 9px;
   padding: 0 15px;
   height: 40px;
-  width: 270px;
+  width: 280px;
   max-width: 100%;
   border: 1px solid #fff9;
   border-radius: 22px;
@@ -596,6 +699,10 @@ button svg {
   color: #606771;
   flex-shrink: 0;
 }
+.round-button.primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
 .round-button {
   width: 38px;
   height: 38px;
@@ -650,6 +757,10 @@ button svg {
     9px "IBM Plex Mono",
     monospace;
   color: #969da7;
+}
+.hero-copy .eyebrow {
+  color: #626973;
+  letter-spacing: 1.1px;
 }
 .home-hero {
   height: 220px;
@@ -708,6 +819,7 @@ button svg {
   border-radius: 24px;
 }
 .tool-shortcut h3 {
+  letter-spacing: -0.2px;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -723,7 +835,7 @@ button svg {
   height: 38px;
 }
 .home-work-grid {
-  margin-top: 40px;
+  margin-top: 41px;
   display: grid;
   grid-template-columns: minmax(0, 800fr) minmax(0, 432fr);
   gap: 24px;
@@ -759,7 +871,7 @@ button svg {
   top: 26px;
   width: 56%;
   height: calc(100% - 26px);
-  object-fit: fill;
+  object-fit: cover;
   object-position: left top;
   box-shadow: -10px 10px 22px #252b3533;
 }
@@ -797,7 +909,7 @@ button svg {
   letter-spacing: -0.6px;
 }
 .home-flow ol {
-  margin-top: 31px;
+  margin-top: 28px;
   padding: 0;
   list-style: none;
 }
@@ -805,7 +917,7 @@ button svg {
   display: flex;
   gap: 13px;
   align-items: center;
-  height: 56px;
+  height: 49px;
   border-bottom: 1px solid var(--border);
 }
 .home-flow li:last-child {
@@ -820,10 +932,26 @@ button svg {
   margin-top: 36px;
 }
 .capability-summary {
-  height: 128px;
-  padding: 16px 20px;
+  height: 132px;
+  padding: 14px 20px;
+}
+.home-tools .section-heading {
+  height: 25px;
+  min-height: 25px;
+}
+
+.home-capabilities .section-heading {
+  margin-bottom: 12px;
+}
+.capability-summary .segment {
+  height: 30px;
+  padding: 3px;
+}
+.capability-summary .segment button {
+  height: 24px;
 }
 .capability-summary-link {
+  min-height: 56px;
   display: flex;
   gap: 14px;
   align-items: center;
@@ -838,7 +966,7 @@ button svg {
   height: 348px;
   padding: 16px;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 26px;
   min-width: 0;
 }
 .project-preview {
@@ -846,10 +974,13 @@ button svg {
   border-radius: 15px;
   overflow: hidden;
 }
+.project-card:has(.project-preview img[src$="wcXWV.webp"]) .project-preview {
+  box-shadow: -10px 10px 22px #252b3533;
+}
 .project-preview img {
   height: 100%;
   width: 100%;
-  object-fit: fill;
+  object-fit: cover;
 }
 .project-information {
   height: 146px;
@@ -887,8 +1018,8 @@ button svg {
   height: 432px;
   padding: 28px;
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(200px, 286fr) minmax(0, 880fr);
+  gap: 34px;
 }
 .workflow-feature h2 {
   font-size: 27px;
@@ -902,28 +1033,33 @@ button svg {
   color: #738191;
   margin-top: 15px;
 }
+.workflow-feature .workflow-audience {
+  margin-top: auto;
+}
 .workflow-detail-steps {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 10px;
 }
 .workflow-detail-steps li {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex: 1;
   min-height: 64px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--border);
-}
-.workflow-detail-steps li:last-child {
-  border-bottom: 0;
+  padding: 9px 18px;
+  background: var(--secondary);
+  outline: 1px solid var(--glass-edge);
+  outline-offset: -1px;
+  border-radius: 18px;
 }
 .workflow-detail-steps .soft-icon {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
+  background: var(--muted);
   border-radius: 50%;
 }
 .workflow-detail-steps h3 {
@@ -959,11 +1095,11 @@ button svg {
 }
 .tool-pipeline {
   height: 160px;
-  padding: 26px;
+  padding: 22px;
   display: grid;
-  grid-template-columns: 300px repeat(5, minmax(0, 1fr));
-  gap: 22px;
-  align-items: center;
+  grid-template-columns: minmax(140px, 190fr) repeat(5, minmax(0, 184fr));
+  gap: 24px;
+  align-items: start;
 }
 .tool-pipeline h2 {
   font-size: 22px;
@@ -976,12 +1112,18 @@ button svg {
   margin-top: 8px;
 }
 .pipeline-step {
-  height: 100px;
+  padding-top: 2px;
+  height: 116px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   color: #68717d;
   position: relative;
+}
+.pipeline-step .soft-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
 }
 .pipeline-step:after {
   content: "›";
@@ -1011,28 +1153,44 @@ button svg {
 .tool-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px 20px;
 }
 .tool-detail-card {
-  height: 130px;
-  padding: 20px 22px;
-  border-radius: 23px;
+  min-height: 132px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.tool-detail-card > .soft-icon,
+.mcp-grid .soft-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+.tool-details {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  align-self: stretch;
 }
 .tool-detail-card h2 {
   font-size: 18px;
   font-weight: 500;
 }
-.tool-detail-card > p {
+.tool-details p {
   font-size: 11px;
-  color: #738191;
-  margin-top: 12px;
-  line-height: 1.8;
+  color: var(--body-text);
+  line-height: 18px;
+  margin-block: 7px;
 }
-.tool-detail-card > div:last-child {
-  padding-top: 10px;
+.tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
 }
 .resource-grid {
   display: grid;
@@ -1097,6 +1255,7 @@ button svg {
   margin-top: 22px;
 }
 .about-identity {
+  gap: 20px;
   height: 366px;
   display: flex;
   flex-direction: column;
@@ -1104,21 +1263,36 @@ button svg {
   justify-content: center;
 }
 .identity-avatar {
-  font-size: 65px;
-  background: #333436;
-  color: #fff;
-  width: 108px;
-  height: 108px;
-  border: 7px solid #fff;
-  box-shadow: 0 4px 10px #0002;
+  width: 120px;
+  height: 120px;
+  --glass-tint: 0.24;
+  --glass-bend: 10;
   border-radius: 50%;
   display: grid;
   place-items: center;
 }
+.identity-avatar img {
+  border-radius: inherit;
+  object-fit: cover;
+  width: 85%;
+  height: 85%;
+}
+.identity-name {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+.identity-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
 .about-identity h3 {
   font-size: 23px;
   font-weight: 500;
-  margin-top: 22px;
+}
+.about-principles .grid > div {
+  box-shadow: inset 0 1px #a1a1a133;
 }
 .about-principles {
   margin-top: 50px;
@@ -1130,7 +1304,7 @@ button svg {
   gap: 18px;
 }
 .social-card {
-  height: 112px;
+  height: 110px;
   display: flex;
   align-items: flex-start;
   padding: 24px;
@@ -1731,11 +1905,11 @@ button svg {
     font-size: 9px;
   }
   .workflow-feature {
-    grid-template-columns: 285px 1fr;
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2.2fr);
     gap: 25px;
   }
   .tool-pipeline {
-    grid-template-columns: 220px repeat(5, 1fr);
+    grid-template-columns: 155px repeat(5, minmax(0, 1fr));
     gap: 15px;
     padding: 22px;
   }
@@ -1889,6 +2063,7 @@ button svg {
   }
   .main-wrapper {
     margin-left: 0;
+    transition: none;
     padding-top: 14px;
   }
   .sidebar-collapsed .main-wrapper {
@@ -2181,7 +2356,6 @@ button svg {
   .identity-avatar {
     width: 90px;
     height: 90px;
-    font-size: 53px;
   }
   .about-identity h3 {
     font-size: 21px;
@@ -2271,6 +2445,21 @@ button svg {
   }
 }
 @media (max-width: 520px) {
+  .daily-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tool-shortcut {
+    height: auto;
+    min-height: 72px;
+    padding: 12px;
+  }
+  .tool-shortcut p {
+    display: block;
+    white-space: normal;
+  }
+  .tool-shortcut:first-child {
+    grid-column: 1 / -1;
+  }
   .page-content {
     padding-inline: 18px;
   }
@@ -2303,7 +2492,8 @@ button svg {
     gap: 26px;
   }
   .featured-project {
-    height: 310px;
+    flex-direction: column;
+    height: auto;
   }
   .featured-info {
     width: 100%;
@@ -2321,16 +2511,13 @@ button svg {
     line-height: 1.9;
   }
   .featured-preview {
-    left: 54%;
-    width: 70%;
-    height: 160px;
-    top: auto;
-    bottom: 0;
-    opacity: 0.17;
-    object-fit: cover;
+    position: static;
+    width: calc(100% - 23px);
+    height: auto;
+    align-self: flex-end;
   }
   .featured-info > div:last-child {
-    margin-top: auto;
+    margin-top: 20px;
   }
   .mini-project {
     height: 78px;
@@ -2396,7 +2583,7 @@ button svg {
     height: 144px;
     padding: 22px;
   }
-  .tool-detail-card > p {
+  .tool-details p {
     font-size: 12px;
   }
   .tool-detail-card h2 {
@@ -2416,6 +2603,7 @@ button svg {
     font-size: 11px;
   }
   .workflow-detail-steps li {
+    padding: 12px;
     gap: 10px;
     align-items: flex-start;
   }
@@ -2582,10 +2770,15 @@ button svg {
   height: 14px;
   font-size: 10px;
 }
-.tool-detail-card {
-  height: 129px;
-}
 
+@media (min-width: 901px) {
+  .capabilities-controls > .search-field {
+    width: 350px;
+  }
+  .route-view[data-route="/projects"] .search-field {
+    width: 302px;
+  }
+}
 .capabilities-controls {
   margin-top: -2px;
 }
@@ -2622,7 +2815,7 @@ body {
   line-height: 15px;
 }
 .about-identity h3 {
-  line-height: 28px;
+  line-height: 33px;
 }
 .discover-card h2 {
   line-height: 35px;
@@ -2674,6 +2867,10 @@ body {
   }
 }
 
+.background-trigger[aria-expanded="true"] {
+  background: var(--glass-fill);
+  box-shadow: var(--liquid-shadow);
+}
 .background-panel > div:first-child p {
   margin-top: 9px;
 }
@@ -2694,25 +2891,35 @@ body {
   background: transparent;
 }
 .background-intensity input[type="range"]::-webkit-slider-runnable-track {
-  height: 1px;
-  background: #b8bfcb;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #96969b var(--range-progress),
+    #dedee1 var(--range-progress)
+  );
 }
 .background-intensity input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  width: 9px;
-  height: 9px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #fff;
   border: 1px solid #8c929c;
-  margin-top: -4px;
+  margin-top: -6px;
 }
 .background-intensity input[type="range"]::-moz-range-track {
-  height: 1px;
-  background: #b8bfcb;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #96969b var(--range-progress),
+    #dedee1 var(--range-progress)
+  );
 }
 .background-intensity input[type="range"]::-moz-range-thumb {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #fff;
   border: 1px solid #8c929c;
@@ -2723,9 +2930,22 @@ body {
 div.input-shell {
   padding-block: 8px;
 }
+[data-slot="dialog-overlay"]:has(~ .add-site-dialog) {
+  backdrop-filter: none;
+  background: #16161630;
+}
+.add-site-dialog[data-slot="dialog-content"] {
+  border-radius: 30px;
+  background: rgb(var(--glass-color, 254 254 254) / 0.97);
+  box-shadow: 0 20px 60px #16161626;
+  gap: 20px;
+}
+.add-site-dialog [data-slot="dialog-header"] {
+  gap: 9px;
+}
 .add-site-dialog > [data-slot="dialog-close"] {
-  top: 24px;
-  right: 24px;
+  top: 32px;
+  right: 32px;
 }
 
 .nav-item {
@@ -2772,6 +2992,32 @@ div.input-shell {
 .nav-item.selected svg {
   color: #343d48;
 }
+html:not(.dark) .identity-name h3 {
+  color: #585858;
+}
+.identity-name h3 {
+  font-family: "Noto Sans SC Variable", sans-serif;
+  letter-spacing: -0.5px;
+}
+.about-identity > .mono:last-child {
+  letter-spacing: 1.8px;
+}
+html:not(.dark) :is(.tool-detail-card h2, .workflow-detail-steps h3) {
+  color: #484848;
+}
+html:not(.dark)
+  :is(.social-card h3, .about-principles h3, .guestbook-empty h2) {
+  color: #5f5f5f;
+}
+html:not(.dark)
+  :is(.social-card > svg, .recommendation-card > div:first-child svg) {
+  color: #888;
+}
+html:not(.dark) .tool-detail-card > .soft-icon,
+html:not(.dark) .mcp-grid .soft-icon {
+  background: #ffffffb3;
+  border-color: white;
+}
 .dark .sidebar-status,
 .dark .sidebar-status > a,
 .dark .topbar-actions > .icon-button,
@@ -2806,9 +3052,21 @@ div.input-shell {
 .capabilities-controls {
   min-height: 44px;
 }
+.capabilities-controls .segment {
+  background: rgb(var(--glass-color, 254 254 254) / var(--glass-opacity, 0.48));
+  box-shadow: inset 0 1px 1px var(--glass-edge);
+  --glass-tint: 0.48;
+  --glass-bend: 7;
+  height: 44px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 23px;
+}
 .capabilities-controls .segment button {
+  padding-inline: 24px;
+  gap: 4px;
   font-size: 13px;
-  height: 28px;
+  height: 36px;
 }
 .capabilities-controls .segment button span {
   font-size: 11px;
@@ -2847,25 +3105,21 @@ body,
 .dark .social-card p,
 .dark .workflow-feature p,
 .dark .workflow-small p,
-.dark .tool-detail-card > p {
+.dark .tool-details p {
   color: var(--body-text);
-}
-.topbar {
-  background: #ffffff7a;
 }
 .status-front,
 .status-back {
   border-radius: 28px;
 }
 .status-back {
-  background: #ffffff29;
   outline-color: #ffffff9e;
 }
 .nav-item.selected {
   background: #ffffff80;
 }
 .dark .status-back {
-  background: #1d202729;
+  --glass-opacity: 0.16;
 }
 .dark .topbar,
 .dark .nav-item.selected {

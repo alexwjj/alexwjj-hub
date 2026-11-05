@@ -85,7 +85,7 @@ export const designTools = [
     description: "连接 GitHub，完成预览与生产部署，并验证真正上线的结果。",
     url: "https://vercel.com/",
     docs: "https://vercel.com/docs",
-    icon: "triangle",
+    icon: "cloud-upload",
   },
   {
     id: "chatgpt",
@@ -181,7 +181,7 @@ export const dailySteps = [
     title: "理解与拆解",
     description: "明确目标、约束和验收标准，补齐项目上下文。",
     tool: "Claude Code",
-    icon: "shuffle",
+    icon: "scan-text",
   },
   {
     title: "设计与构建",
@@ -205,7 +205,7 @@ export const dailySteps = [
     title: "交付与部署",
     description: "在 GitHub 完成审查，通过 Vercel 部署并验证线上结果。",
     tool: "GitHub · Vercel",
-    icon: "git",
+    icon: "pull-request",
   },
 ];
 export const designFlows = [
@@ -234,7 +234,7 @@ export const designFlows = [
     category: "知识整理",
     trail: "收集 → 提炼 → 归档",
     tools: "Obsidian / Skills",
-    icon: "book",
+    icon: "library",
   },
   {
     id: "debug",
@@ -243,7 +243,7 @@ export const designFlows = [
     category: "开发交付",
     trail: "复现 → 定位 → 修复 → 回归",
     tools: "Codex / Debugging",
-    icon: "briefcase",
+    icon: "bug",
   },
   {
     id: "research",

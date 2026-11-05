@@ -14,7 +14,7 @@ import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowRight,
-  ChevronsUpDown,
+  ChevronDown,
   Check,
   Code2,
   Loader2,
@@ -192,7 +192,7 @@ export function Guestbook() {
       <div className="guestbook-layout">
         <section className="glass guestbook-compose">
           <div className="flex items-center gap-3">
-            <span className="account-avatar !w-[42px] !h-[42px] !text-[21px]">
+            <span className="account-avatar !w-[36px] !h-[36px] !text-[21px]">
               {user?.login.slice(0, 1).toLowerCase() || "a"}
             </span>
             <div>
@@ -284,7 +284,7 @@ export function Guestbook() {
           </form>
         </section>
         <aside className="glass guestbook-note">
-          <Icon name="message" size={25} />
+          <Icon name="messages" size={27} />
           <h2>
             每一次交流，
             <br />
@@ -295,7 +295,7 @@ export function Guestbook() {
             <br />
             或一个还没成形的想法，都值得聊聊。
           </p>
-          <div className="flex flex-wrap gap-2 mt-5">
+          <div className="guestbook-topics mt-5">
             {["作品反馈", "工具推荐", "合作交流", "打个招呼"].map((t) => (
               <button
                 key={t}
@@ -332,8 +332,8 @@ export function Guestbook() {
         </p>
       ) : !messages.length ? (
         <div className="glass guestbook-empty">
-          <span className="round-button !w-[48px] !h-[48px]">
-            <Icon name="message" size={22} />
+          <span className="round-button !w-[58px] !h-[58px]">
+            <Icon name="message-circle" size={27} />
           </span>
           <h2>第一条留言，留给你。</h2>
           <p>这里还很安静。分享一个想法，或先打个招呼。</p>
@@ -471,8 +471,9 @@ function ProjectPicker({
           className="project-picker-trigger"
           aria-labelledby={labelId}
         >
+          <Icon name="layers" size={15} />
           <Combobox.Value />
-          <ChevronsUpDown size={16} />
+          <ChevronDown className="ml-auto" size={14} />
         </Combobox.Trigger>
         <Combobox.Portal>
           <Combobox.Positioner
@@ -631,7 +632,7 @@ export function OwnerDashboard() {
           }}
         />
         <label>
-          <Icon name="image" size={14} />
+          <Icon name="calendar" size={15} />
           <span className="sr-only">时间</span>
           <select
             aria-label="统计时间范围"
@@ -652,7 +653,7 @@ export function OwnerDashboard() {
           <Icon name="refresh" size={12} />
         </button>
         <span className="private-indicator">
-          <Icon name="shield" size={13} />
+          <Icon name="lock" size={13} />
           仅自己可见
         </span>
       </div>
@@ -674,37 +675,37 @@ export function OwnerDashboard() {
                 name: "浏览量 PV",
                 value: data.summary.views,
                 description: "页面累计访问次数",
-                icon: "panels",
+                icon: "views",
               },
               {
                 name: "独立访客 UV",
                 value: data.summary.visitors,
                 description: "按访客去重",
-                icon: "user",
+                icon: "users",
               },
               {
                 name: "访问会话",
                 value: data.summary.sessions,
                 description: "连续访问的会话数",
-                icon: "compass",
+                icon: "pointer",
               },
               {
                 name: "平均停留",
                 value: formatDuration,
                 description: "页面前台平均停留",
-                icon: "refresh",
+                icon: "clock",
               },
               {
                 name: "JavaScript 错误",
                 value: data.summary.errors,
                 description: "查看异常，改善体验",
-                icon: "briefcase",
+                icon: "alert",
               },
             ].map((stat) => (
               <section className="glass stat-card" key={stat.name}>
                 <span>
                   {stat.name}
-                  <Icon name={stat.icon} size={13} />
+                  <Icon name={stat.icon} size={14} />
                 </span>
                 <strong>
                   {typeof stat.value === "number"
@@ -835,7 +836,7 @@ export function OwnerDashboard() {
             <aside className="glass attention-panel">
               <h2>需要关注</h2>
               <div className="attention-error">
-                <Icon name="code" size={18} />
+                <Icon name="alert" size={24} />
                 <div>
                   <strong>JavaScript 错误</strong>
                   <p>
