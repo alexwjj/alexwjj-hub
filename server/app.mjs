@@ -1,4 +1,10 @@
 import { websiteURL, websiteMetadata } from "./website-metadata.mjs";
+import {
+  messageBodyLimit,
+  getMessages,
+  getMessageImage,
+  writeMessage,
+} from "./messages.mjs";
 import catalog from "../src/content/projects.json" with { type: "json" };
 import { randomUUID, createHash } from "node:crypto";
 import { authRoute, configuration, sameOrigin, session } from "./auth.mjs";
@@ -61,9 +67,9 @@ export function validateEvents(body, projectId, secret) {
   });
 }
 
-async function readBody(request) {
+async function readBody(request, limit = 24_000) {
   const text = await request.text();
-  if (Buffer.byteLength(text) > 24_000) throw new Error("Body too large");
+  if (Buffer.byteLength(text) > limit) throw new Error("Body too large");
   const value = JSON.parse(text);
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Invalid body");
@@ -282,46 +288,22 @@ export function createHandler({
       }
       return json({ error: "接口不存在" }, 404);
     }
+    if (path.startsWith("/api/message-images/") && request.method === "GET") {
+      return getMessageImage(await getDatabase(), path);
+    }
     if (path === "/api/messages") {
-      if (request.method === "GET") {
-        const db = await getDatabase();
-        return json({
-          messages: await db.query(
-            "SELECT id::text,user_id,login,name,content,created_at FROM hub_messages ORDER BY created_at DESC,id DESC LIMIT 100",
-          ),
-        });
-      }
+      if (request.method === "GET")
+        return json({ messages: await getMessages(await getDatabase()) });
       if (!["POST", "DELETE"].includes(request.method))
         return json({ error: "不支持的操作" }, 405);
       if (!user) return json({ error: "请先使用 GitHub 登录" }, 401);
       if (!sameOrigin(request, config))
         return json({ error: "请求来源无效" }, 403);
-      const body = await readBody(request);
-      const db = await getDatabase();
-      if (request.method === "DELETE") {
-        if (!/^\d{1,20}$/.test(String(body.id)))
-          return json({ error: "留言编号无效" }, 400);
-        const removed = await db.query(
-          "DELETE FROM hub_messages WHERE id=$1::bigint AND (user_id=$2 OR $3::boolean) RETURNING id",
-          [body.id, user.id, user.isOwner],
-        );
-        return removed.length
-          ? json({ ok: true })
-          : json({ error: "留言不存在或无权删除" }, 403);
-      }
-      if (
-        typeof body.content !== "string" ||
-        !body.content.trim() ||
-        body.content.trim().length > 1000
-      )
-        return json({ error: "留言请保持在 1–1000 字之间" }, 400);
-      if (!(await rateLimit(db, "message:" + user.id, 1, 30)))
-        return json({ error: "请等待 30 秒后再留言" }, 429);
-      const rows = await db.query(
-        "INSERT INTO hub_messages(user_id,login,name,content) VALUES($1,$2,$3,$4) RETURNING id::text,user_id,login,name,content,created_at",
-        [user.id, user.login, user.name, body.content.trim()],
+      const body = await readBody(
+        request,
+        request.method === "POST" ? messageBodyLimit : 24_000,
       );
-      return json({ message: rows[0] }, 201);
+      return writeMessage(await getDatabase(), request.method, user, body);
     }
     if (path === "/api/collect") {
       const projectId = url.searchParams.get("project");

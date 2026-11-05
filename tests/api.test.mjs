@@ -529,3 +529,65 @@ test("discover default sites do not reappear after deletion and schema initializ
     0,
   );
 });
+
+test("threaded image messages persist, retain reply targets and remove only the deleted author's media", async () => {
+  const image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ";
+  const webp =
+    "UklGRjoAAABXRUJQVlA4IC4AAADQAQCdASoCAAIAAUAmJaACdLoB+AADsAD+82mX/mwIGaH0wf+mkeNI8aR8poAA";
+  const bytes = Buffer.from(webp, "base64");
+  const post = (id, body) =>
+    handler(
+      req("/api/messages", { id, method: "POST", body: { entry: body } }),
+    );
+  const list = async () =>
+    (await (await handler(req("/api/messages"))).json()).messages;
+  const remove = (user, id) =>
+    handler(req("/api/messages", { id: user, method: "DELETE", body: { id } }));
+
+  assert.equal(
+    (await post("801", { content: "", images: [image] })).status,
+    400,
+  );
+  assert.equal(
+    (await post("801", { content: "", images: Array(5).fill(webp) })).status,
+    400,
+  );
+  const created = await post("801", { content: "", images: [webp] });
+  assert.equal(created.status, 201);
+  const { message: root } = await created.json();
+  assert.equal(root.image_count, 1);
+  const imagePath = `/api/message-images/${root.id}/0`;
+  const media = await handler(req(imagePath));
+  assert.equal(media.headers.get("content-type"), "image/webp");
+  assert.deepEqual(Buffer.from(await media.arrayBuffer()), bytes);
+  assert.equal((await handler(req(imagePath + "0"))).status, 404);
+  const { message: first } = await (
+    await post("802", { content: "reply", parent_id: root.id })
+  ).json();
+  const { message: second } = await (
+    await post("803", { content: "", images: [webp], parent_id: first.id })
+  ).json();
+  assert.equal(first.root_id, root.id);
+  assert.equal(second.root_id, root.id);
+  assert.equal(second.parent_id, first.id);
+  assert.equal(second.reply_to_name, first.name);
+  assert.deepEqual(
+    (await list()).filter((m) => m.root_id === root.id).map((m) => m.id),
+    [first.id, second.id],
+  );
+  assert.equal((await remove("802", root.id)).status, 403);
+  assert.equal((await remove("801", root.id)).status, 200);
+  assert.equal((await handler(req(imagePath))).status, 404);
+  assert((await list()).find((m) => m.id === root.id).deleted);
+  assert.equal(
+    (await post("805", { content: "too late", parent_id: root.id })).status,
+    409,
+  );
+  assert.equal((await remove("802", first.id)).status, 200);
+  assert.equal(
+    (await list()).find((m) => m.id === second.id).reply_to_name,
+    "已删除的留言",
+  );
+  assert.equal((await remove("803", second.id)).status, 200);
+  assert(!(await list()).some((m) => m.id === root.id));
+});

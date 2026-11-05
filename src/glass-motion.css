@@ -151,12 +151,21 @@
   scale: 1;
   transition:
     opacity 180ms,
-    scale 320ms var(--liquid-ease);
+    scale 220ms var(--liquid-ease);
 }
-[data-slot="dialog-content"][data-starting-style],
-[data-slot="dialog-content"][data-ending-style] {
+[data-slot="dialog-content"][data-starting-style] {
   opacity: 0;
   scale: 0.96;
+}
+[data-slot="dialog-content"][data-ending-style] {
+  opacity: 0;
+  scale: 0.986;
+  transition:
+    opacity 140ms ease-out,
+    scale 140ms ease-out;
+}
+[data-slot="dialog-overlay"][data-ending-style] {
+  transition-duration: 140ms;
 }
 [data-slot="dialog-overlay"] {
   animation: none;

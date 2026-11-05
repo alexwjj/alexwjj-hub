@@ -17,13 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  api,
-  AuthProvider,
-  Guestbook,
-  OwnerDashboard,
-  useAuth,
-} from "./account";
+import { api, AuthProvider, OwnerDashboard, useAuth } from "./account";
 import {
   BackgroundSettings,
   useAppearance,
@@ -36,6 +30,8 @@ import {
   SearchField,
   SectionHeading,
 } from "./components/hub-ui";
+import { Guestbook } from "./Guestbook";
+import { GithubAvatar } from "./components/GithubAvatar";
 import { Discover } from "./Discover";
 import { profile, projects } from "./data";
 import type { Project } from "./data";
@@ -457,13 +453,15 @@ function Projects() {
 }
 function FlowDialog({
   flow,
+  open,
   onClose,
 }: {
   flow: (typeof designFlows)[number] | null;
+  open: boolean;
   onClose: () => void;
 }) {
   return (
-    <Dialog open={!!flow} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flow-dialog">
         <DialogHeader>
           <DialogTitle>{flow?.title}</DialogTitle>
@@ -513,6 +511,11 @@ function Workflows() {
       null,
     ),
     [expanded, setExpanded] = useState(false);
+  const [flowOpen, setFlowOpen] = useState(false);
+  function showFlow(flow: (typeof designFlows)[number]) {
+    setSelected(flow);
+    setFlowOpen(true);
+  }
   const matches = designFlows.filter(
     (f) =>
       (category.startsWith("全部") || f.category === category) &&
@@ -560,7 +563,7 @@ function Workflows() {
             </p>
             <button
               className="pill primary self-start mt-5"
-              onClick={() => setSelected(daily)}
+              onClick={() => showFlow(daily)}
             >
               查看完整流程
               <Icon name="arrow" size={14} />
@@ -596,7 +599,7 @@ function Workflows() {
           <button
             className="glass workflow-small text-left"
             key={flow.id}
-            onClick={() => setSelected(flow)}
+            onClick={() => showFlow(flow)}
           >
             <div className="flex justify-between muted">
               <Icon name={flow.icon} size={24} />
@@ -621,7 +624,11 @@ function Workflows() {
       {!matches.length && (
         <p className="data-placeholder">没有找到匹配的流程。</p>
       )}
-      <FlowDialog flow={selected} onClose={() => setSelected(null)} />
+      <FlowDialog
+        flow={selected}
+        open={flowOpen}
+        onClose={() => setFlowOpen(false)}
+      />
     </>
   );
 }
@@ -752,6 +759,7 @@ function Resources() {
     [category, setCategory] = useState("全部"),
     [page, setPage] = useState(0),
     [selected, setSelected] = useState<Resource | null>(null);
+  const [resourceOpen, setResourceOpen] = useState(false);
   useEffect(() => {
     setQuery(new URLSearchParams(location.search).get("q") || "");
     setCategory("全部");
@@ -934,7 +942,10 @@ function Resources() {
                 </span>
                 <button
                   className="text-link !text-[10px]"
-                  onClick={() => setSelected(resource)}
+                  onClick={() => {
+                    setSelected(resource);
+                    setResourceOpen(true);
+                  }}
                 >
                   {kind === "skill" ? "查看用法" : "查看配置"}
                   <Icon name="arrow" size={12} />
@@ -976,7 +987,7 @@ function Resources() {
           </div>
         </div>
       )}
-      <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
+      <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
         <DialogContent className="resource-dialog">
           <DialogHeader>
             <DialogTitle>
@@ -1439,18 +1450,15 @@ function Shell() {
         <div className="account-row">
           {user ? (
             <>
-              <Link to="/about" className="account-avatar">
-                <img
-                  src="/design/account-monogram.webp"
-                  alt="关于俊劫"
-                  width={32}
-                  height={32}
-                />
-              </Link>
-              <Link to="/about">
-                <strong>俊劫 / Alex</strong>
-                <small>@alexwjj</small>
-              </Link>
+              <GithubAvatar id={user.id} login={user.login} />
+              <a
+                href={`https://github.com/${user.login}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <strong>{user.name}</strong>
+                <small>@{user.login}</small>
+              </a>
               <button
                 className="icon-button ml-auto"
                 aria-label="账户菜单"

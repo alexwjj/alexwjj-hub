@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS hub_messages (
   content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 1000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE hub_messages
+  ADD COLUMN IF NOT EXISTS parent_id BIGINT REFERENCES hub_messages(id),
+  ADD COLUMN IF NOT EXISTS root_id BIGINT REFERENCES hub_messages(id),
+  ADD COLUMN IF NOT EXISTS images BYTEA[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE hub_messages ALTER COLUMN content DROP NOT NULL;
+CREATE INDEX IF NOT EXISTS hub_messages_root ON hub_messages(root_id, id);
 CREATE TABLE IF NOT EXISTS hub_events (
   id UUID PRIMARY KEY, project_id TEXT NOT NULL REFERENCES hub_projects(id),
   type TEXT NOT NULL, name TEXT NOT NULL, path TEXT NOT NULL,

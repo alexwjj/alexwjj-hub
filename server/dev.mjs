@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { messageBodyLimit } from "./messages.mjs";
 import { createHandler } from "./app.mjs";
 const handler = createHandler();
 const port = Number(process.env.HUB_API_PORT || 5005);
@@ -8,10 +9,15 @@ const origin = process.env.APP_ORIGIN || "http://127.0.0.1:5173";
 createServer(async (incoming, outgoing) => {
   try {
     const chunks = [];
+    const limit =
+      incoming.method === "POST" &&
+      incoming.url.split("?")[0] === "/api/messages"
+        ? messageBodyLimit
+        : 24_000;
     let length = 0;
     for await (const chunk of incoming) {
       length += chunk.length;
-      if (length > 24_000) {
+      if (length > limit) {
         outgoing.writeHead(413);
         outgoing.end();
         return;
