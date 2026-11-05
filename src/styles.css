@@ -959,23 +959,21 @@ button svg {
 }
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
 .project-card {
-  height: 348px;
+  display: flex;
+  flex-direction: column;
   padding: 16px;
   overflow: hidden;
   border-radius: 26px;
   min-width: 0;
 }
 .project-preview {
-  height: 154px;
+  aspect-ratio: 16 / 10;
   border-radius: 15px;
   overflow: hidden;
-}
-.project-card:has(.project-preview img[src$="wcXWV.webp"]) .project-preview {
-  box-shadow: -10px 10px 22px #252b3533;
 }
 .project-preview img {
   height: 100%;
@@ -983,7 +981,8 @@ button svg {
   object-fit: cover;
 }
 .project-information {
-  height: 146px;
+  flex: 1;
+  min-height: 128px;
   margin-top: 16px;
   padding: 0 4px;
   display: flex;
@@ -2274,18 +2273,14 @@ button svg {
     font-size: 10px;
   }
   .projects-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px;
   }
   .project-card {
-    height: 330px;
     padding: 12px;
-  }
-  .project-preview {
-    height: 140px;
   }
   .project-information {
     margin-top: 15px;
-    height: 148px;
   }
   .project-information h2 {
     font-size: 17px;
@@ -2544,14 +2539,9 @@ button svg {
     gap: 18px;
   }
   .project-card {
-    height: 340px;
     padding: 14px;
   }
-  .project-preview {
-    height: 154px;
-  }
   .project-information {
-    height: 144px;
     margin-top: 15px;
   }
   .project-information h2 {

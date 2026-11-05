@@ -59,12 +59,23 @@ assert(
   ).includes("j-lab-photos"),
 );
 await p.keyboard.press("Escape");
+await p.cdp("Emulation.setDeviceMetricsOverride", {
+  width: 1440,
+  height: 800,
+  deviceScaleFactor: 1,
+  mobile: false,
+});
 await go("/projects");
 assert.equal(
   await p.evaluate(() => document.querySelectorAll(".project-card").length),
-  4,
+  6,
 );
-await p.click('loc=role:button[name*="查看其余 5"]');
+await p.evaluate(() =>
+  window.scrollTo(0, document.documentElement.scrollHeight),
+);
+await p.waitForFunction(
+  () => document.querySelectorAll(".project-card").length === 9,
+);
 assert.equal(
   await p.evaluate(() => document.querySelectorAll(".project-card").length),
   9,
@@ -151,7 +162,7 @@ await p.click('loc=role:button[name="查看明细"]');
 await p.waitForSelector('[role="dialog"]');
 await p.keyboard.press("Escape");
 console.log(
-  "PASS: design geometry, theme persistence, global search, 4+5 projects, five-step workflow, tool search, resource pagination, public MCP list and analytics selection.",
+  "PASS: design geometry, theme persistence, global search, scroll-loaded projects, five-step workflow, tool search, resource pagination, public MCP list and analytics selection.",
 );
 for (const width of [390, 768, 1600]) {
   await p.cdp("Emulation.setDeviceMetricsOverride", {

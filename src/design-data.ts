@@ -339,31 +339,27 @@ export const skillCopy: Record<
 };
 export const projectCopy: Record<
   string,
-  { name: string; description: string; tech: string; image?: string }
+  { name: string; description: string; tech: string }
 > = {
   "alexwjj-hub": {
     name: "alexwjj-hub",
     description: "连接作品、工具与可复用能力的个人数字工作台。",
     tech: "React · shadcn/ui",
-    image: "wcXWV",
   },
   "alexwjj-site": {
     name: "个人作品与履历",
     description: "关于 AIGC、技术实践与内容创作的个人名片。",
     tech: "CSS · Personal site",
-    image: "YEDVS",
   },
   "family-genealogy": {
     name: "家有根 · 家族谱",
     description: "连接家人、关系与故事，让家族记忆有处可寻。",
     tech: "TypeScript · Family",
-    image: "orcfP",
   },
   "yunshang-house-3d": {
     name: "云上家 · 3D 装修",
     description: "在三维空间里比较布局，找到更适合自己的家。",
     tech: "JavaScript · 3D",
-    image: "eOI3I",
   },
 };
 

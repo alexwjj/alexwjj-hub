@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HashRouter,
   Link,
@@ -210,7 +210,7 @@ function Home() {
             </div>
             <img
               className="featured-preview"
-              src="/design/previews/ONbqX.webp"
+              src={hub.image}
               alt="alexwjj-hub 界面预览"
             />
           </OutLink>
@@ -352,13 +352,15 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     <article className="glass project-card">
       <OutLink href={project.url} className="block">
         <div className="project-preview">
-          {info?.image ? (
+          {project.image ? (
             <img
-              src={"/design/previews/" + info.image + ".webp"}
-              alt={(info?.name || project.name) + " 界面预览"}
+              src={project.image}
+              alt={`${info?.name || project.name} 实际页面截图`}
+              width={1280}
+              height={800}
+              loading={index < 3 ? "eager" : "lazy"}
+              decoding="async"
             />
-          ) : project.image ? (
-            <img src={project.image} alt={project.name} />
           ) : (
             <div className="generic-preview">
               <Icon
@@ -407,7 +409,8 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
 function Projects() {
   const [category, setCategory] = useState("全部 09"),
     [query, setQuery] = useState(""),
-    [expanded, setExpanded] = useState(false);
+    [visibleCount, setVisibleCount] = useState(6);
+  const loadMore = useRef<HTMLButtonElement>(null);
   const ordered = [...projects].sort(
     (a, b) =>
       (projectOrder.indexOf(a.id) < 0 ? 99 : projectOrder.indexOf(a.id)) -
@@ -420,10 +423,20 @@ function Projects() {
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
-  const shown =
-    category.startsWith("全部") && !query && !expanded
-      ? filtered.slice(0, 4)
-      : filtered;
+  const shown = filtered.slice(0, visibleCount);
+  const hasMore = shown.length < filtered.length;
+  useEffect(() => {
+    const target = loadMore.current;
+    if (!hasMore || !target || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        setVisibleCount((count) => count + 3);
+      }
+    });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount, category, query]);
   return (
     <>
       <PageHeading
@@ -438,12 +451,15 @@ function Projects() {
           value={category}
           onChange={(v) => {
             setCategory(v);
-            setExpanded(false);
+            setVisibleCount(6);
           }}
         />
         <SearchField
           value={query}
-          onChange={setQuery}
+          onChange={(value) => {
+            setQuery(value);
+            setVisibleCount(6);
+          }}
           placeholder="搜索名称、技术或用途"
           label="搜索作品"
         />
@@ -458,11 +474,15 @@ function Projects() {
       )}
       <div className="flex items-center justify-between mt-[34px]">
         <span className="mono text-[11px] muted">
-          精选展示 {String(shown.length).padStart(2, "0")} / 09
+          已展示 {shown.length} / {filtered.length} 个作品
         </span>
-        {!expanded && shown.length < filtered.length && (
-          <button className="pill" onClick={() => setExpanded(true)}>
-            查看其余 {filtered.length - shown.length} 个作品
+        {hasMore && (
+          <button
+            ref={loadMore}
+            className="pill"
+            onClick={() => setVisibleCount((count) => count + 3)}
+          >
+            加载更多作品
             <Icon name="down" size={14} />
           </button>
         )}
