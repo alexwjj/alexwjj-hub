@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { refractedOffset } from "../src/lib/glass-optics.ts";
+import { refractedOffset } from "../.agents/skills/alexwjj-liquid-glass/assets/glass-optics.ts";
 
 test("glass refraction stays finite at the rim and goes flat at the lens centre", () => {
   for (const bevel of [1, 8, 22]) {

@@ -1,0 +1,66 @@
+/* Standalone material. Wrap a page or a preview in .hub-glass-scene. */
+.hub-glass-scene {
+  --lg-ink: #252830;
+  --lg-edge: #ffffffad;
+  --lg-shadow: 0 12px 30px #252b3514, inset 0 1px 1px #ffffffcc, inset -1px -1px 3px #65656512;
+  color: var(--lg-ink);
+  background: linear-gradient(#ffffffa6, #ffffffa6), url("./silver-flow.webp") center / cover;
+}
+.hub-glass-scene[data-theme="dark"] {
+  --lg-ink: #eeeef0;
+  --lg-edge: #ffffff24;
+  --lg-shadow: 0 12px 30px #0003, inset 0 1px 1px #ffffff26;
+  --lg-fill: 29 32 39;
+  --lg-opacity: .36;
+  background: linear-gradient(#15171ce3, #15171ce3), url("./silver-flow.webp") center / cover;
+}
+.hub-glass {
+  --glass-tint: .68;
+  --glass-bend: 8;
+  position: relative;
+  color: inherit;
+  border-radius: 26px;
+  background: rgb(var(--lg-fill, 254 254 254) / var(--lg-opacity, var(--glass-tint)));
+  outline: 1px solid var(--lg-edge, #ffffffad);
+  outline-offset: -1px;
+  box-shadow: var(--lg-shadow, 0 12px 30px #252b3514);
+  -webkit-backdrop-filter: var(--glass-backdrop, blur(1.5px) brightness(.98));
+  backdrop-filter: var(--glass-backdrop, blur(1.5px) brightness(.98));
+}
+.hub-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  border-image: url("./glass-rim.png") 84 / 42px;
+  clip-path: border-box;
+  pointer-events: none;
+}
+[data-theme="dark"] .hub-glass::before { opacity: .32; }
+.hub-glass[data-material="back"] { --glass-tint: .16; --glass-bend: 10; border-radius: 28px; }
+.hub-glass[data-material="navigation"] { --glass-tint: .42; --glass-bend: 10; border-radius: 30px; }
+.hub-glass[data-material="reading"] { --glass-tint: .74; --glass-bend: 8; border-radius: 28px; }
+.hub-glass[data-material="dialog"] { --glass-tint: .97; --glass-bend: 10; border-radius: 30px; }
+.hub-glass:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.glass-definitions { position: absolute; width: 0; height: 0; pointer-events: none; }
+@media (prefers-reduced-transparency: reduce) {
+  .hub-glass-scene .hub-glass { background: rgb(var(--lg-fill, 254 254 254)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .hub-glass::before { display: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(button, a).hub-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(100px circle at var(--glass-pointer-x,50%) var(--glass-pointer-y,30%), #ffffff50, transparent 75%);
+    opacity: 0;
+    transition: opacity 180ms;
+  }
+  :is(button, a).hub-glass:hover::after { opacity: .65; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(button, a).hub-glass::after { transition: none; }
+}

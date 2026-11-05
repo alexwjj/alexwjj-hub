@@ -1,4 +1,4 @@
-// Single convex surface, normal incidence, glass IOR 1.5. See docs/liquid-glass.md.
+// Single convex surface, normal incidence, glass IOR 1.5.
 export function refractedOffset(depth: number, bevel: number, thickness = 6) {
   if (depth < 0 || depth >= bevel || bevel <= 0) return 0;
   const x = Math.max(0.001, depth / bevel);

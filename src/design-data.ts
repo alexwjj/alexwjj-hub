@@ -291,6 +291,11 @@ export const skillCopy: Record<
     description: "把需求转成可用界面，统一布局、视觉与关键交互。",
     tag: "界面实现",
   },
+  "alexwjj-liquid-glass": {
+    title: "液态玻璃 Skill",
+    description: "试用四种玻璃材质，将本站的样式、贴图与折射组件带进自己的项目。",
+    tag: "本站原创",
+  },
   superpowers: {
     title: "完整开发流程",
     description: "把规划、实现、调试与验证组织成一套完整流程。",

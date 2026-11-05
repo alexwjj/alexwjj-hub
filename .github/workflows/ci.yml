@@ -13,5 +13,6 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
       - run: npm ci
+      - run: python3 scripts/package-glass-skill.py --check
       - run: npm test
       - run: npm run build

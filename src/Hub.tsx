@@ -46,17 +46,31 @@ import {
   skillIcons,
   mcpIcons,
 } from "./design-data";
+import {
+  LiquidGlassSkill,
+  glassSkillId,
+  glassSkillPath,
+} from "./LiquidGlassSkill";
 import { LiquidGlass } from "./LiquidGlass";
 import { GlassGroup, GlassIndicator } from "./components/GlassMotion";
 import { transitionTheme } from "./lib/theme-transition";
 import { Wallpaper } from "./components/BackgroundSettings";
 
+const skillCount = resources.filter(
+  (resource) => resource.kind === "skill",
+).length;
+const mcpCount = String(resources.length - skillCount).padStart(2, "0");
 const navigation = [
   { to: "/", name: "总览", icon: "panels" },
   { to: "/projects", name: "作品", icon: "layers", count: "09" },
   { to: "/workflows", name: "工作流", icon: "workflow", count: "08" },
   { to: "/tools", name: "AI 工具箱", icon: "command", count: "16" },
-  { to: "/resources", name: "Skills & MCP", icon: "blocks", count: "73" },
+  {
+    to: "/resources",
+    name: "Skills & MCP",
+    icon: "blocks",
+    count: String(resources.length),
+  },
   { to: "/discover", name: "发现", icon: "compass", count: "02" },
   { to: "/guestbook", name: "留言板", icon: "message" },
   { to: "/about", name: "关于我", icon: "user" },
@@ -124,7 +138,7 @@ function Home() {
           </div>
           <h1>创造，自成一格。</h1>
           <p>作品、工具与灵感，在这里自然连接。</p>
-          <div className="flex gap-3 mt-[22px]">
+          <div className="flex flex-wrap items-center gap-3 mt-[22px]">
             <Link className="pill primary !h-[42px] !px-5" to="/projects">
               探索我的作品
               <Icon name="arrow" size={16} />
@@ -133,6 +147,7 @@ function Home() {
               查看工作流
               <Icon name="right" size={17} />
             </Link>
+            <MoreLink to={glassSkillPath}>获取本站玻璃 Skill</MoreLink>
           </div>
         </div>
         <HeroStatus />
@@ -264,7 +279,7 @@ function Home() {
                 onClick={() => setKind("Skills")}
               >
                 <GlassIndicator active={kind === "Skills"} />
-                Skills <span>67</span>
+                Skills <span>{skillCount}</span>
               </button>
               <button
                 className={kind === "MCP" ? "selected" : ""}
@@ -272,7 +287,7 @@ function Home() {
                 onClick={() => setKind("MCP")}
               >
                 <GlassIndicator active={kind === "MCP"} />
-                MCP <span>06</span>
+                MCP <span>{mcpCount}</span>
               </button>
             </GlassGroup>
             <Icon name="bookmark" size={13} className="muted self-center" />
@@ -284,8 +299,8 @@ function Home() {
             {(kind === "Skills"
               ? [
                   {
-                    name: "superpowers",
-                    description: "让 Agent 拥有完整工程思维",
+                    name: glassSkillId,
+                    description: "本站液态玻璃 · 预览与下载",
                   },
                   {
                     name: "frontend-design",
@@ -299,7 +314,11 @@ function Home() {
             ).map((r) => (
               <Link
                 className="capability-summary-link"
-                to={`/resources?kind=${kind === "Skills" ? "skill" : "mcp"}&q=${encodeURIComponent(r.name)}`}
+                to={
+                  r.name === glassSkillId
+                    ? glassSkillPath
+                    : `/resources?kind=${kind === "Skills" ? "skill" : "mcp"}&q=${encodeURIComponent(r.name)}`
+                }
                 key={r.name}
               >
                 <Icon
@@ -814,7 +833,7 @@ function Resources() {
             onClick={() => navigate("/resources?kind=skill")}
           >
             <GlassIndicator active={kind === "skill"} />
-            Skills <span>67</span>
+            Skills <span>{skillCount}</span>
           </button>
           <button
             className={kind === "mcp" ? "selected" : ""}
@@ -822,7 +841,7 @@ function Resources() {
             onClick={() => navigate("/resources?kind=mcp")}
           >
             <GlassIndicator active={kind === "mcp"} />
-            MCP <span>06</span>
+            MCP <span>{mcpCount}</span>
           </button>
         </GlassGroup>
         <SearchField
@@ -940,16 +959,22 @@ function Resources() {
                     ? copy?.tag || resource.category
                     : "MODEL CONTEXT PROTOCOL"}
                 </span>
-                <button
-                  className="text-link !text-[10px]"
-                  onClick={() => {
-                    setSelected(resource);
-                    setResourceOpen(true);
-                  }}
-                >
-                  {kind === "skill" ? "查看用法" : "查看配置"}
-                  <Icon name="arrow" size={12} />
-                </button>
+                {resource.id === glassSkillId ? (
+                  <Link className="text-link !text-[10px]" to={glassSkillPath}>
+                    预览与下载 <Icon name="arrow" size={12} />
+                  </Link>
+                ) : (
+                  <button
+                    className="text-link !text-[10px]"
+                    onClick={() => {
+                      setSelected(resource);
+                      setResourceOpen(true);
+                    }}
+                  >
+                    {kind === "skill" ? "查看用法" : "查看配置"}
+                    <Icon name="arrow" size={12} />
+                  </button>
+                )}
               </div>
             </article>
           );
@@ -1193,7 +1218,10 @@ function SearchDialog({
     ...resources.map((r) => ({
       title: skillCopy[r.id]?.title || r.name,
       description: `${r.name} · ${r.description}`,
-      path: `/resources?kind=${r.kind}&q=${encodeURIComponent(r.name)}`,
+      path:
+        r.id === glassSkillId
+          ? glassSkillPath
+          : `/resources?kind=${r.kind}&q=${encodeURIComponent(r.name)}`,
     })),
   ];
   const shown = entries
@@ -1317,11 +1345,13 @@ function Shell() {
       : location.pathname.startsWith(n.to),
   );
   const breadcrumbLabel =
-    current?.to === "/resources"
-      ? new URLSearchParams(location.search).get("kind") === "mcp"
-        ? "能力库 · MCP"
-        : "能力库 · Skills"
-      : current?.name || "页面";
+    location.pathname === glassSkillPath
+      ? "液态玻璃 Skill"
+      : current?.to === "/resources"
+        ? new URLSearchParams(location.search).get("kind") === "mcp"
+          ? "能力库 · MCP"
+          : "能力库 · Skills"
+        : current?.name || "页面";
   useEffect(() => {
     let active = true;
     api<{ sites: unknown[] }>("/api/discover")
@@ -1610,6 +1640,10 @@ function Shell() {
                 <Route
                   path="/tools/:id"
                   element={<Navigate to="/tools" replace />}
+                />
+                <Route
+                  path={glassSkillPath}
+                  element={<LiquidGlassSkill theme={currentTheme} />}
                 />
                 <Route path="/resources" element={<Resources />} />
                 <Route

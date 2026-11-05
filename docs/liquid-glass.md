@@ -60,7 +60,7 @@ Motion 及其运行时依赖的版权与 MIT 许可随站点提供：[许可文�
 
 ### 光学材质
 
-`src/lib/glass-optics.ts` 计算凸四次曲面斜率，使用空气到玻璃的折射率 1.5 求出采样偏移。`src/LiquidGlass.tsx` 把这个一维轮廓投到圆角矩形法线，生成 RG 位移图，经 `feImage → feDisplacementMap` 采样背景；字体仍由 DOM 正常绘制。
+`.agents/skills/alexwjj-liquid-glass/assets/glass-optics.ts` 计算凸四次曲面斜率，使用空气到玻璃的折射率 1.5 求出采样偏移。同目录的 `LiquidGlass.tsx` 把这个一维轮廓投到圆角矩形法线，生成 RG 位移图，经 `feImage → feDisplacementMap` 采样背景；字体仍由 DOM 正常绘制。
 
 这是单曲面、垂直入射近似，不等同完整光线追踪。像素循环用 256 个采样点的查找表，避免逐像素执行三角函数。位移图按宽、高、圆角缓存，地图最大边约 420px，只有尺寸变化或新元素挂载时生成；不逐帧截图页面。观察范围包含 `body` 的 Portal，并排除自身 SVG 定义，卸载时断开 Observer、监听器与动画。
 

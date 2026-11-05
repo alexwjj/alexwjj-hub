@@ -105,3 +105,7 @@ ego-browser nodejs < scripts/glass-smoke.mjs
 
 
 国内渠道：各项目应按访问网站的 hostname 动态选取 SDK 来源，`weightbook.icu` 及其子域使用 `https://alexwjj-hub.weightbook.icu`，其他域使用 Vercel 入口。请从站长后台复制最新的自动选择代码，避免使用旧的固定 Vercel 域名片段。SDK 会将数据发往自身来源域名的 `/api/collect`；同一项目 ID 汇总到同一份数据。
+
+## 本站液态玻璃 Skill
+
+项目级 Skill 位于 [alexwjj-liquid-glass](.agents/skills/alexwjj-liquid-glass/SKILL.md)。首页和能力库提供材质预览与 ZIP 下载。更新 Skill 后运行 `python3 scripts/package-glass-skill.py` 刷新下载包，CI 会校验包内内容。

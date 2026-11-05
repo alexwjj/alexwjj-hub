@@ -3,6 +3,7 @@ export type Resource = { id: string; name: string; kind: ResourceKind; category:
 // Public, general-purpose capabilities verified against the local skill catalog and MCP configuration.
 // Installation/configuration is evidence of availability, not a claim of daily usage.
 const skills: [string, string, string, string?][] = [
+  ["alexwjj-liquid-glass", "设计", "复用本站的液态玻璃材质、边缘高光与 React 折射组件。"],
   ["ponytail", "开发", "控制改动范围，用最小的完整实现交付任务。"],
   ["karpathy-guidelines", "开发", "约束推测和过度抽象，明确假设与验收标准。"],
   ["frontend-design", "设计", "设计并实现完整页面，处理布局、视觉与交互。", "https://github.com/anthropics/skills"],
