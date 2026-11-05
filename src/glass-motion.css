@@ -1,0 +1,231 @@
+/* Material and motion share one selection layer; dimensions remain Pencil R2. */
+:root {
+  --liquid-fill: #ffffff80;
+  --liquid-edge: #ffffffe0;
+  --liquid-shadow: 0 4px 12px #343a4414, inset 0 1px 1px #fff;
+  --liquid-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dark {
+  --liquid-fill: #ffffff20;
+  --liquid-edge: #ffffff45;
+  --liquid-shadow: 0 4px 12px #0003, inset 0 1px 1px #ffffff30;
+}
+.nav-selection-region {
+  flex-shrink: 0;
+}
+.nav-selection-region .nav-item,
+[data-glass-group].segment button,
+[data-glass-group].filter-pills button,
+[data-glass-group].theme-controls button {
+  position: relative;
+  isolation: isolate;
+}
+.nav-selection-region .nav-item.selected,
+[data-glass-group].segment button.selected,
+[data-glass-group].filter-pills button.selected,
+[data-glass-group].theme-controls button.selected {
+  background: transparent;
+  border-color: transparent;
+  outline-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.nav-selection-region .nav-item.selected:focus-visible {
+  outline-color: var(--ring);
+}
+.liquid-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--liquid-fill);
+  outline: 1px solid var(--liquid-edge);
+  outline-offset: -1px;
+  box-shadow: var(--liquid-shadow);
+  backdrop-filter: var(--glass-backdrop, blur(8px) saturate(1.15));
+  -webkit-backdrop-filter: var(--glass-backdrop, blur(8px) saturate(1.15));
+  transition:
+    scale 420ms var(--spring),
+    background-color 240ms;
+}
+.liquid-indicator::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 15%,
+    #ffffff60 45%,
+    transparent 75%
+  );
+  animation: liquid-sheen 520ms var(--liquid-ease) both;
+}
+.filter-pills .liquid-indicator {
+  --liquid-fill: #29323c;
+  --liquid-edge: #7b8793;
+  --liquid-shadow: inset 0 1px 1px #ffffff45, 0 3px 8px #29323c18;
+}
+.dark .filter-pills .liquid-indicator {
+  --liquid-fill: #e5e7ed;
+  --liquid-edge: #ffffff80;
+}
+.theme-controls .liquid-indicator {
+  --liquid-fill: var(--popover);
+}
+[data-glass-group] button:active > .liquid-indicator,
+.nav-item:active > .liquid-indicator {
+  scale: 0.96 1.06;
+}
+.pill,
+.icon-button,
+.search-trigger,
+.background-trigger,
+.tool-shortcut {
+  position: relative;
+  isolation: isolate;
+}
+:is(
+  .pill,
+  .icon-button,
+  .search-trigger,
+  .background-trigger,
+  .tool-shortcut
+)::after,
+[data-glass-group] :is(button, .nav-item)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    100px circle at var(--glass-pointer-x, 50%) var(--glass-pointer-y, 30%),
+    #ffffff65,
+    transparent 75%
+  );
+  opacity: 0;
+  transition: opacity 180ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(
+      .pill,
+      .icon-button,
+      .search-trigger,
+      .background-trigger,
+      .tool-shortcut
+    ):hover::after,
+  [data-glass-group] :is(button, .nav-item):hover::after {
+    opacity: 0.65;
+  }
+}
+.wallpaper-layer {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+}
+.route-view,
+.liquid-content {
+  animation: glass-content-enter 280ms var(--liquid-ease) both;
+}
+.background-panel {
+  transform-origin: top right;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 160ms,
+    transform 280ms var(--liquid-ease);
+}
+.background-panel[data-starting-style],
+.background-panel[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+[data-slot="dialog-content"] {
+  animation: none;
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 180ms,
+    scale 320ms var(--liquid-ease);
+}
+[data-slot="dialog-content"][data-starting-style],
+[data-slot="dialog-content"][data-ending-style] {
+  opacity: 0;
+  scale: 0.96;
+}
+[data-slot="dialog-overlay"] {
+  animation: none;
+  opacity: 1;
+  transition: opacity 180ms;
+}
+[data-slot="dialog-overlay"][data-starting-style],
+[data-slot="dialog-overlay"][data-ending-style] {
+  opacity: 0;
+}
+html[data-theme-transition]::view-transition-old(root) {
+  animation: none;
+}
+html[data-theme-transition]::view-transition-new(root) {
+  animation: glass-theme-reveal 460ms var(--liquid-ease) both;
+  mix-blend-mode: normal;
+}
+@keyframes liquid-sheen {
+  from {
+    transform: translateX(-60%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.55;
+  }
+  to {
+    transform: translateX(60%);
+    opacity: 0;
+  }
+}
+@keyframes glass-content-enter {
+  from {
+    opacity: 0.45;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes glass-theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x) var(--theme-y));
+  }
+  to {
+    clip-path: circle(150vmax at var(--theme-x) var(--theme-y));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liquid-indicator {
+    transform: none !important;
+    scale: none !important;
+  }
+  .route-view,
+  .liquid-content,
+  .liquid-indicator::after,
+  [data-slot="dialog-content"],
+  [data-slot="dialog-overlay"],
+  .background-panel {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-indicator {
+    background: var(--popover);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .filter-pills .liquid-indicator {
+    background: var(--primary);
+  }
+}

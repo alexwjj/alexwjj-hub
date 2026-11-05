@@ -1,12 +1,33 @@
 import { useEffect, useState } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Icon } from "./hub-ui";
+import { AnimatePresence, motion } from "motion/react";
 export const wallpapers = [
   { id: "silver", name: "银白流体", file: "01-silver-flow.png" },
   { id: "mountains", name: "雾山留白", file: "02-misty-mountains.png" },
   { id: "clouds", name: "云间微光", file: "03-cloud-light.png" },
   { id: "pearl", name: "珍珠弧面", file: "04-pearl-arcs.png" },
 ];
+export function Wallpaper({ id }: { id: string }) {
+  const wallpaper = wallpapers.find((item) => item.id === id) || wallpapers[0];
+  return (
+    <div className="app-wallpaper" aria-hidden="true">
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={wallpaper.id}
+          className="wallpaper-layer"
+          style={{
+            backgroundImage: `url(/design/wallpapers/${wallpaper.file})`,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.32 }}
+        />
+      </AnimatePresence>
+    </div>
+  );
+}
 export function useAppearance() {
   const [appearance, setAppearance] = useState(() => {
     try {

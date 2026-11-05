@@ -5,6 +5,7 @@
 @import "@fontsource-variable/noto-sans-sc";
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "./styles.css";
+@import "./glass-motion.css";
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --font-sans: "Inter Variable", "Noto Sans SC Variable", sans-serif;

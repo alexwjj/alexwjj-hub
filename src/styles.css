@@ -116,18 +116,7 @@ button svg {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: url("/design/wallpapers/01-silver-flow.png") center/cover
-    no-repeat;
   opacity: var(--wallpaper-strength);
-}
-html[data-wallpaper="mountains"] .app-wallpaper {
-  background-image: url("/design/wallpapers/02-misty-mountains.png");
-}
-html[data-wallpaper="clouds"] .app-wallpaper {
-  background-image: url("/design/wallpapers/03-cloud-light.png");
-}
-html[data-wallpaper="pearl"] .app-wallpaper {
-  background-image: url("/design/wallpapers/04-pearl-arcs.png");
 }
 .dark .app-wallpaper {
   filter: brightness(0.5);

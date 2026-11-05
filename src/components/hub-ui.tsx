@@ -57,6 +57,7 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode, SVGProps } from "react";
+import { GlassGroup, GlassIndicator } from "./GlassMotion";
 function Github({
   size = 18,
   ...props
@@ -249,7 +250,7 @@ export function FilterPills({
   label?: string;
 }) {
   return (
-    <div className="filter-pills" aria-label={label}>
+    <GlassGroup className="filter-pills" aria-label={label}>
       {items.map((item) => (
         <button
           key={item}
@@ -257,9 +258,10 @@ export function FilterPills({
           aria-pressed={value === item}
           onClick={() => onChange(item)}
         >
+          <GlassIndicator active={value === item} />
           {item}
         </button>
       ))}
-    </div>
+    </GlassGroup>
   );
 }

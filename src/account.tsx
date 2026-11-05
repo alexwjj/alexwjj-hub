@@ -1,4 +1,5 @@
 import { Icon, PageHeading } from "./components/hub-ui";
+import { GlassGroup, GlassIndicator } from "./components/GlassMotion";
 import {
   Dialog,
   DialogContent,
@@ -718,20 +719,24 @@ export function OwnerDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <h2>访问趋势</h2>
-                <div className="segment">
+                <GlassGroup className="segment">
                   <button
                     className={chartMetric === "PV" ? "selected" : ""}
+                    aria-pressed={chartMetric === "PV"}
                     onClick={() => setChartMetric("PV")}
                   >
+                    <GlassIndicator active={chartMetric === "PV"} />
                     PV
                   </button>
                   <button
                     className={chartMetric === "UV" ? "selected" : ""}
+                    aria-pressed={chartMetric === "UV"}
                     onClick={() => setChartMetric("UV")}
                   >
+                    <GlassIndicator active={chartMetric === "UV"} />
                     UV
                   </button>
-                </div>
+                </GlassGroup>
               </div>
               <span className="mono muted text-[10px]">
                 {chartDays[0].day.slice(5).replace("-", ".")} —{" "}

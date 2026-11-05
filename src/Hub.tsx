@@ -51,6 +51,9 @@ import {
   mcpIcons,
 } from "./design-data";
 import { LiquidGlass } from "./LiquidGlass";
+import { GlassGroup, GlassIndicator } from "./components/GlassMotion";
+import { transitionTheme } from "./lib/theme-transition";
+import { Wallpaper } from "./components/BackgroundSettings";
 
 const navigation = [
   { to: "/", name: "总览", icon: "panels" },
@@ -258,23 +261,30 @@ function Home() {
         </SectionHeading>
         <div className="glass capability-summary">
           <div className="flex justify-between">
-            <div className="segment">
+            <GlassGroup className="segment">
               <button
                 className={kind === "Skills" ? "selected" : ""}
+                aria-pressed={kind === "Skills"}
                 onClick={() => setKind("Skills")}
               >
+                <GlassIndicator active={kind === "Skills"} />
                 Skills <span>67</span>
               </button>
               <button
                 className={kind === "MCP" ? "selected" : ""}
+                aria-pressed={kind === "MCP"}
                 onClick={() => setKind("MCP")}
               >
+                <GlassIndicator active={kind === "MCP"} />
                 MCP <span>06</span>
               </button>
-            </div>
+            </GlassGroup>
             <Icon name="bookmark" size={18} className="muted" />
           </div>
-          <div className="grid grid-cols-2 gap-8 mt-[17px] max-sm:grid-cols-1">
+          <div
+            key={kind}
+            className="liquid-content grid grid-cols-2 gap-8 mt-[17px] max-sm:grid-cols-1"
+          >
             {(kind === "Skills"
               ? [
                   {
@@ -778,20 +788,24 @@ function Resources() {
         }
       />
       <div className="page-controls capabilities-controls !mb-5">
-        <div className="segment">
+        <GlassGroup className="segment">
           <button
             className={kind === "skill" ? "selected" : ""}
+            aria-pressed={kind === "skill"}
             onClick={() => navigate("/resources?kind=skill")}
           >
+            <GlassIndicator active={kind === "skill"} />
             Skills <span>67</span>
           </button>
           <button
             className={kind === "mcp" ? "selected" : ""}
+            aria-pressed={kind === "mcp"}
             onClick={() => navigate("/resources?kind=mcp")}
           >
+            <GlassIndicator active={kind === "mcp"} />
             MCP <span>06</span>
           </button>
-        </div>
+        </GlassGroup>
         <SearchField
           value={query}
           onChange={(v) => {
@@ -839,10 +853,11 @@ function Resources() {
         </span>
       </div>
       <div
+        key={`${kind}:${category}:${current}`}
         className={
           kind === "skill"
-            ? "resource-grid skills-grid"
-            : "resource-grid mcp-grid"
+            ? "liquid-content resource-grid skills-grid"
+            : "liquid-content resource-grid mcp-grid"
         }
       >
         {matches.slice(current * 9, current * 9 + 9).map((resource) => {
@@ -1310,47 +1325,59 @@ function Shell() {
           <small>PERSONAL HUB</small>
         </span>
       </Link>
-      <div className="nav-label">工作空间</div>
-      <nav className="main-nav" aria-label="主导航">
-        {navigation.slice(0, 6).map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.to === "/"}
-            className={({ isActive }) =>
-              "nav-item " + (isActive ? "selected" : "")
-            }
-          >
-            <Icon name={n.icon} size={17} />
-            <span>{n.name}</span>
-            {n.count && (
-              <small>
-                {n.to === "/discover"
-                  ? String(discoverCount).padStart(2, "0")
-                  : n.count}
-              </small>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-      <div className="nav-label mt-7">交流与记录</div>
-      <nav className="secondary-nav" aria-label="交流与记录">
-        {navigation
-          .slice(6)
-          .filter((n) => n.to !== "/admin" || user?.isOwner)
-          .map((n) => (
+      <GlassGroup className="nav-selection-region">
+        <div className="nav-label">工作空间</div>
+        <nav className="main-nav" aria-label="主导航">
+          {navigation.slice(0, 6).map((n) => (
             <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.to === "/"}
               className={({ isActive }) =>
                 "nav-item " + (isActive ? "selected" : "")
               }
-              key={n.to}
-              to={n.to}
             >
-              <Icon name={n.icon} size={17} />
-              {n.name}
+              {({ isActive }) => (
+                <>
+                  <GlassIndicator active={isActive} />
+                  <Icon name={n.icon} size={17} />
+                  <span>{n.name}</span>
+                  {n.count && (
+                    <small>
+                      {n.to === "/discover"
+                        ? String(discoverCount).padStart(2, "0")
+                        : n.count}
+                    </small>
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
-      </nav>
+        </nav>
+        <div className="nav-label mt-7">交流与记录</div>
+        <nav className="secondary-nav" aria-label="交流与记录">
+          {navigation
+            .slice(6)
+            .filter((n) => n.to !== "/admin" || user?.isOwner)
+            .map((n) => (
+              <NavLink
+                className={({ isActive }) =>
+                  "nav-item " + (isActive ? "selected" : "")
+                }
+                key={n.to}
+                to={n.to}
+              >
+                {({ isActive }) => (
+                  <>
+                    <GlassIndicator active={isActive} />
+                    <Icon name={n.icon} size={17} />
+                    <span>{n.name}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+        </nav>
+      </GlassGroup>
       <div className="sidebar-bottom">
         <div className="sidebar-status">
           <span className="mono flex items-center gap-2 text-[11px]">
@@ -1423,7 +1450,7 @@ function Shell() {
   return (
     <TooltipProvider>
       <LiquidGlass />
-      <div className="app-wallpaper" aria-hidden="true" />
+      <Wallpaper id={appearance.wallpaper} />
       <div className="app-shell">
         <aside className="sidebar glass" inert={sidebarCollapsed}>
           {navContent}
@@ -1464,24 +1491,32 @@ function Shell() {
                 appearance={appearance}
                 onChange={setAppearance}
               />
-              <div className="theme-controls">
+              <GlassGroup className="theme-controls">
                 <button
                   className={currentTheme === "light" ? "selected" : ""}
                   aria-label="浅色主题"
                   aria-pressed={currentTheme === "light"}
-                  onClick={() => setTheme("light")}
+                  onClick={(e) =>
+                    currentTheme !== "light" &&
+                    transitionTheme(() => setTheme("light"), e.currentTarget)
+                  }
                 >
+                  <GlassIndicator active={currentTheme === "light"} />
                   <Icon name="sun" size={15} />
                 </button>
                 <button
                   className={currentTheme === "dark" ? "selected" : ""}
                   aria-label="深色主题"
                   aria-pressed={currentTheme === "dark"}
-                  onClick={() => setTheme("dark")}
+                  onClick={(e) =>
+                    currentTheme !== "dark" &&
+                    transitionTheme(() => setTheme("dark"), e.currentTarget)
+                  }
                 >
+                  <GlassIndicator active={currentTheme === "dark"} />
                   <Icon name="moon" size={15} />
                 </button>
-              </div>
+              </GlassGroup>
               {user ? (
                 <OutLink
                   href={profile.github}

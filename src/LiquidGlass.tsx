@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
+import { refractedOffset } from "./lib/glass-optics";
 
 const namespace = "http://www.w3.org/2000/svg";
 const surfaceSelector =
-  '.glass, .pill, .nav-item.selected, .sidebar, .panel, .tool-shortcut, .project-card, .website-item, .social-links > a, .message-card, .search-trigger, [data-slot="button"], [data-slot="tabs-list"], .theme-controls';
+  '.glass, .pill, .liquid-indicator, .sidebar, .panel, .tool-shortcut, .project-card, .website-item, .social-links > a, .message-card, .search-trigger, [data-slot="button"], [data-slot="tabs-list"], .theme-controls';
 const interactiveSelector =
   'button:not(:disabled), a[data-slot="button"], a.pill, .tool-shortcut, .nav-item';
 
@@ -17,6 +18,10 @@ function lensMap(width: number, height: number, radius: number) {
   if (!context) return null;
   const pixels = context.createImageData(canvas.width, canvas.height);
   const bevel = Math.min(22, height * 0.3, radius * 0.85);
+  const profile = Array.from({ length: 256 }, (_, i) =>
+    refractedOffset((i / 255) * bevel, bevel),
+  );
+  const displacement = Math.max(...profile, 1);
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
       const px = (x + 0.5) / scale - width / 2;
@@ -28,8 +33,9 @@ function lensMap(width: number, height: number, radius: number) {
       const length = Math.hypot(ax, ay);
       const depth = -(length + Math.min(Math.max(qx, qy), 0) - radius);
       const strength =
-        depth >= 0
-          ? Math.pow(Math.max(0, 1 - depth / Math.max(bevel, 1)), 2)
+        depth >= 0 && depth < bevel
+          ? profile[Math.min(255, Math.round((depth / bevel) * 255))] /
+            displacement
           : 0;
       const nx =
         length > 0
@@ -51,7 +57,7 @@ function lensMap(width: number, height: number, radius: number) {
     }
   }
   context.putImageData(pixels, 0, 0);
-  return canvas.toDataURL();
+  return { image: canvas.toDataURL(), displacement: displacement * 2 };
 }
 
 export function LiquidGlass() {
@@ -110,7 +116,7 @@ export function LiquidGlass() {
         );
         filter.append(
           node("feImage", {
-            href: map,
+            href: map.image,
             x: "0",
             y: "0",
             width: `${width}`,
@@ -128,7 +134,7 @@ export function LiquidGlass() {
             yChannelSelector: "G",
             result,
           });
-        filter.append(displacement(height < 90 ? 20 : 16, "refract"));
+        filter.append(displacement(map.displacement, "refract"));
         defs.append(filter);
         filters.set(key, id);
       }
@@ -183,7 +189,8 @@ export function LiquidGlass() {
       )
         frame = requestAnimationFrame(refresh);
     });
-    mutations.observe(document.getElementById("root")!, {
+    // Base UI portals live outside #root and need the same optical material.
+    mutations.observe(document.body, {
       childList: true,
       subtree: true,
     });
@@ -217,6 +224,8 @@ export function LiquidGlass() {
     const down = (event: PointerEvent) => {
       if (reducedMotion.matches || event.button !== 0) return;
       pressed = interactive(event.target);
+      // Shared selection geometry is owned by Motion; do not scale its label/anchor.
+      if (pressed?.closest("[data-glass-group]")) pressed = null;
       if (pressed)
         animate(pressed, [{ scale: "1" }, { scale: ".96 1.035" }], 95, true);
     };
@@ -256,6 +265,13 @@ export function LiquidGlass() {
     document.addEventListener("pointercancel", release);
     window.addEventListener("blur", release);
     document.addEventListener("pointermove", move, { passive: true });
+    const motionChanged = () => {
+      if (!reducedMotion.matches) return;
+      animations.forEach((animation) => animation.cancel());
+      animations.clear();
+      pressed = null;
+    };
+    reducedMotion.addEventListener("change", motionChanged);
     refresh();
     return () => {
       disposed = true;
@@ -268,6 +284,7 @@ export function LiquidGlass() {
       document.removeEventListener("pointercancel", release);
       window.removeEventListener("blur", release);
       document.removeEventListener("pointermove", move);
+      reducedMotion.removeEventListener("change", motionChanged);
       for (const element of elements) {
         element.style.removeProperty("--glass-backdrop");
         delete element.dataset.glass;
