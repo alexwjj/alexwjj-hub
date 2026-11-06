@@ -591,3 +591,178 @@ test("threaded image messages persist, retain reply targets and remove only the 
   assert.equal((await remove("803", second.id)).status, 200);
   assert(!(await list()).some((m) => m.id === root.id));
 });
+
+test("Google OAuth binds state and PKCE, separates identities and keeps profile fields private", async () => {
+  const cfg = {
+    ...config,
+    googleClientId: "google-client",
+    googleClientSecret: "google-secret",
+  };
+  const start = await authRoute(req("/api/auth/google/login"), cfg);
+  const authorization = new URL(start.headers.get("location"));
+  assert.equal(authorization.origin, "https://accounts.google.com");
+  assert.equal(authorization.searchParams.get("scope"), "openid profile");
+  assert.equal(
+    authorization.searchParams.get("redirect_uri"),
+    config.origin + "/api/auth/google/callback",
+  );
+  assert.equal(authorization.searchParams.get("code_challenge_method"), "S256");
+  const oauthCookie = start.headers.get("set-cookie").split(";")[0];
+  const verifier = unseal(
+    decodeURIComponent(oauthCookie.split("=")[1]),
+    config.secret,
+  ).verifier;
+  const callback = (state) =>
+    new Request(
+      config.origin +
+        "/api/auth/google/callback?code=google-code&state=" +
+        state,
+      { headers: { cookie: oauthCookie } },
+    );
+  let calls = 0;
+  const fetcher = async (url, options) => {
+    calls++;
+    if (url === "https://oauth2.googleapis.com/token") {
+      assert.equal(options.body.get("code_verifier"), verifier);
+      assert.equal(options.body.get("client_secret"), "google-secret");
+      assert.equal(options.body.get("grant_type"), "authorization_code");
+      return Response.json({ access_token: "private-google-token" });
+    }
+    assert.equal(url, "https://openidconnect.googleapis.com/v1/userinfo");
+    assert.equal(options.headers.Authorization, "Bearer private-google-token");
+    return Response.json({
+      sub: config.ownerId,
+      name: "Google visitor",
+      picture: "https://lh3.googleusercontent.com/test",
+      email: "private-profile-field",
+    });
+  };
+  const rejected = await authRoute(callback("wrong"), cfg, fetcher);
+  assert(rejected.headers.get("location").endsWith("login=failed"));
+  assert.equal(calls, 0);
+  const response = await authRoute(
+    callback(authorization.searchParams.get("state")),
+    cfg,
+    fetcher,
+  );
+  assert.equal(calls, 2);
+  const cookies = response.headers.getSetCookie();
+  const loggedIn = new Request(config.origin, {
+    headers: { cookie: cookies[0].split(";")[0] },
+  });
+  const google = session(loggedIn, cfg);
+  assert.equal(google.id, "google:" + config.ownerId);
+  assert.equal(google.provider, "google");
+  assert.equal(google.isOwner, false);
+  assert.equal(google.avatar_url, "https://lh3.googleusercontent.com/test");
+  const value = unseal(
+    decodeURIComponent(cookies[0].split(";")[0].split("=")[1]),
+    config.secret,
+  );
+  assert(!JSON.stringify(value).includes("private-google-token"));
+  assert(!JSON.stringify(value).includes("private-profile-field"));
+  const googleHandler = createHandler({
+    config: cfg,
+    getDatabase: async () => db,
+  });
+  const signedRequest = (path, method = "GET", body) =>
+    new Request(config.origin + path, {
+      method,
+      headers: {
+        cookie: cookies[0].split(";")[0],
+        origin: config.origin,
+        "content-type": "application/json",
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  assert.equal(
+    (await googleHandler(signedRequest("/api/admin/projects"))).status,
+    403,
+  );
+  const posted = await googleHandler(
+    signedRequest("/api/messages", "POST", { content: "Hello from Google" }),
+  );
+  assert.equal(posted.status, 201);
+  const message = (await posted.json()).message;
+  assert.equal(message.user_id, google.id);
+  assert.equal(message.avatar_url, google.avatar_url);
+  assert.equal(
+    (
+      await handler(
+        req("/api/messages", {
+          id: "456",
+          method: "DELETE",
+          body: { id: message.id },
+        }),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await googleHandler(
+        signedRequest("/api/messages", "DELETE", { id: message.id }),
+      )
+    ).status,
+    200,
+  );
+});
+
+test("Google failure paths and provider availability are independent of GitHub configuration", async () => {
+  const cfg = {
+    ...config,
+    clientId: "",
+    clientSecret: "",
+    googleClientId: "g",
+    googleClientSecret: "s",
+  };
+  const available = await (
+    await authRoute(req("/api/auth/session"), cfg)
+  ).json();
+  assert.deepEqual(available.providers, { github: false, google: true });
+  assert.equal(available.loginEnabled, true);
+  assert.equal((await authRoute(req("/api/auth/login"), cfg)).status, 503);
+  assert.equal(
+    (await authRoute(req("/api/auth/google/login"), config)).status,
+    503,
+  );
+  const start = await authRoute(req("/api/auth/google/login"), cfg);
+  const state = new URL(start.headers.get("location")).searchParams.get(
+    "state",
+  );
+  const callback = new Request(
+    config.origin + "/api/auth/google/callback?code=x&state=" + state,
+    { headers: { cookie: start.headers.get("set-cookie").split(";")[0] } },
+  );
+  for (const profile of [{ sub: null }, { sub: "https://evil.example/" }]) {
+    const response = await authRoute(callback, cfg, async (url) =>
+      Response.json(
+        url.endsWith("/token") ? { access_token: "token" } : profile,
+      ),
+    );
+    assert(response.headers.get("location").endsWith("login=failed"));
+  }
+  const failed = await authRoute(
+    callback,
+    cfg,
+    async () => new Response("", { status: 500 }),
+  );
+  assert(failed.headers.get("location").endsWith("login=failed"));
+  const forged = seal(
+    {
+      ...identity(),
+      id: "google:" + config.ownerId,
+      avatar_url: "https://lh3.googleusercontent.com.evil.example/avatar",
+      isOwner: true,
+    },
+    config.secret,
+  );
+  const user = session(
+    new Request(config.origin, {
+      headers: { cookie: "__Host-hub_session=" + forged },
+    }),
+    cfg,
+  );
+  assert.equal(user.avatar_url, "");
+  assert.equal(user.isOwner, false);
+});

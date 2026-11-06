@@ -17,7 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { api, AuthProvider, OwnerDashboard, useAuth } from "./account";
+import {
+  api,
+  AuthProvider,
+  LoginButton,
+  OwnerDashboard,
+  useAuth,
+} from "./account";
 import {
   BackgroundSettings,
   useAppearance,
@@ -31,7 +37,7 @@ import {
   SectionHeading,
 } from "./components/hub-ui";
 import { Guestbook } from "./Guestbook";
-import { GithubAvatar } from "./components/GithubAvatar";
+import { UserAvatar, AccountIdentity } from "./components/UserAvatar";
 import { Discover } from "./Discover";
 import { profile, projects } from "./data";
 import type { Project } from "./data";
@@ -1318,7 +1324,7 @@ function SearchDialog({
   );
 }
 function Shell() {
-  const { user, loginEnabled, logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const [currentTheme, setTheme] = useState(() => {
     try {
@@ -1500,15 +1506,8 @@ function Shell() {
         <div className="account-row">
           {user ? (
             <>
-              <GithubAvatar id={user.id} login={user.login} />
-              <a
-                href={`https://github.com/${user.login}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <strong>{user.name}</strong>
-                <small>@{user.login}</small>
-              </a>
+              <UserAvatar {...user} />
+              <AccountIdentity {...user} />
               <button
                 className="icon-button ml-auto"
                 aria-label="账户菜单"
@@ -1522,24 +1521,21 @@ function Shell() {
               </button>
             </>
           ) : (
-            <a
-              className={
-                "account-login-link " + (!loginEnabled ? "opacity-50" : "")
-              }
-              href="/api/auth/login"
-              aria-disabled={!loginEnabled}
-              onClick={(event) => !loginEnabled && event.preventDefault()}
-            >
+            <LoginButton className="account-login-link">
               <span className="account-avatar">
-                <Icon name="github" size={17} />
+                <Icon name="user" size={17} />
               </span>
-              GitHub 登录
-            </a>
+              登录
+            </LoginButton>
           )}
           {accountOpen && user && (
             <div className="account-menu glass">
               <>
-                <span className="muted text-xs">@{user.login}</span>
+                <span className="muted text-xs">
+                  {user.provider === "google"
+                    ? "Google 用户"
+                    : "@" + user.login}
+                </span>
                 {user.isOwner && (
                   <>
                     <Link to="/admin">作品数据</Link>

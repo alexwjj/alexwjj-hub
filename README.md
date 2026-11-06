@@ -35,11 +35,29 @@ npm run dev
 | `SESSION_SECRET` | 至少 32 个字符，建议 `openssl rand -base64 48` 生成 |
 | `GITHUB_CLIENT_ID` | 此站专用 GitHub OAuth App Client ID |
 | `GITHUB_CLIENT_SECRET` | 此站专用 GitHub OAuth App Client Secret |
+| `GOOGLE_CLIENT_ID` | Google Auth Platform 的 Web 应用 OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | 对应的 Google OAuth Client Secret |
 | `DATABASE_URL` | 独立 Neon 项目的 Postgres 连接串 |
 
 OAuth App Homepage 设置为 `APP_ORIGIN`，回调设置为 `APP_ORIGIN/api/auth/callback`。仅申请 `read:user`，不申请仓库或邮箱权限；访问令牌不进入会话 cookie。登录使用 state、PKCE、签名 HttpOnly/Secure/SameSite cookie；留言与退出检查同源。
 
-公开栏目无需登录；GitHub 用户登录后可以留言、删除自己的留言。站长能删除任何留言，并查看「作品数据」菜单。所有 `/api/admin/*` 接口在服务端验证站长身份，未登录返回 401，其他用户返回 403。
+公开栏目无需登录；GitHub 和 Google 用户登录后可以留言、删除自己的留言。站长能删除任何留言，并查看「作品数据」菜单。所有 `/api/admin/*` 接口在服务端验证站长身份，未登录返回 401，其他用户返回 403。
+
+### Google 登录配置
+
+在 Google Auth Platform 创建 Web application 类型的 OAuth 客户端，配置应用名称和受众。测试状态下，把参与验收的 Google 账号加入测试用户。
+
+授权重定向 URI 必须与 `APP_ORIGIN` 一致。正式域名使用下面的回调地址。
+
+```text
+https://alexwjj-hub.weightbook.icu/api/auth/google/callback
+```
+
+本地开发可另加 `http://127.0.0.1:5173/api/auth/google/callback`。Google Client ID、Secret 和 `SESSION_SECRET` 配到服务端环境后，重新部署或重启本地后端。前端通过 session 接口决定登录方式是否可用。
+
+Google 使用服务端授权码交换、state 和 PKCE，再用访问令牌请求 Google UserInfo 获取固定 sub、昵称与头像。申请范围为 `openid profile`。Google 用户 ID 保存为 `google:<sub>`，GitHub 沿用原有数字 ID。两种登录方式分别拥有自己的留言，站长由 `OWNER_GITHUB_ID` 判断。账号关联需要显式绑定。头像随留言存档，邮箱和访问令牌不会写入留言或会话。
+
+参考 [Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)。
 
 数据库初始化：
 

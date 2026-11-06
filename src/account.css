@@ -934,3 +934,32 @@
     gap: 5px;
   }
 }
+
+.login-dialog[data-slot="dialog-content"] {
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  padding: 30px;
+}
+.login-providers {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+.login-providers .pill {
+  height: 44px;
+  justify-content: space-between;
+}
+.message-meta .account-identity {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.message-meta .account-identity strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.message-meta .account-identity small {
+  color: var(--body-text);
+  font-size: 12px;
+}

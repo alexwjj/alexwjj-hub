@@ -16,7 +16,6 @@ import {
   ArrowRight,
   ChevronDown,
   Check,
-  Code2,
   Loader2,
   LogOut,
   ShieldCheck,
@@ -30,17 +29,21 @@ export type User = {
   login: string;
   name: string;
   isOwner: boolean;
+  provider?: "github" | "google";
+  avatar_url?: string;
 };
 type AuthState = {
   user: User | null;
   loading: boolean;
   loginEnabled: boolean;
+  providers: { github: boolean; google: boolean };
   logout: () => Promise<void>;
 };
 const AuthContext = createContext<AuthState>({
   user: null,
   loading: true,
   loginEnabled: false,
+  providers: { github: false, google: false },
   logout: async () => {},
 });
 export const useAuth = () => useContext(AuthContext);
@@ -64,16 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null as User | null,
     loading: true,
     loginEnabled: false,
+    providers: { github: false, google: false },
   });
   useEffect(() => {
     const controller = new AbortController();
-    api<{ user: User | null; loginEnabled: boolean }>("/api/auth/session", {
+    api<{
+      user: User | null;
+      loginEnabled: boolean;
+      providers?: { github: boolean; google: boolean };
+    }>("/api/auth/session", {
       signal: controller.signal,
     })
-      .then((value) => setState({ ...value, loading: false }))
+      .then((value) =>
+        setState({
+          ...value,
+          providers: value.providers ?? {
+            github: value.loginEnabled,
+            google: false,
+          },
+          loading: false,
+        }),
+      )
       .catch(() => {
         if (!controller.signal.aborted)
-          setState({ user: null, loading: false, loginEnabled: false });
+          setState({
+            user: null,
+            loading: false,
+            loginEnabled: false,
+            providers: { github: false, google: false },
+          });
       });
     return () => controller.abort();
   }, []);
@@ -88,8 +110,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export function LoginButton({
+  className = "pill primary",
+  children = "登录",
+}: {
+  className?: string;
+  children?: ReactNode;
+}) {
+  const { providers, loading } = useAuth();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        className={className}
+        disabled={loading}
+        onClick={() => setOpen(true)}
+      >
+        {children}
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="login-dialog">
+          <DialogHeader>
+            <DialogTitle>登录个人空间</DialogTitle>
+            <DialogDescription>
+              选择账号后，即可留言、发图和参与回复。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="login-providers">
+            {(
+              [
+                { id: "github", name: "GitHub", href: "/api/auth/login" },
+                {
+                  id: "google",
+                  name: "Google",
+                  href: "/api/auth/google/login",
+                },
+              ] as const
+            ).map((p) =>
+              providers[p.id] ? (
+                <a className="pill" href={p.href} key={p.id}>
+                  使用 {p.name} 账号登录
+                  <Icon name="right" size={15} />
+                </a>
+              ) : (
+                <button className="pill" disabled key={p.id}>
+                  {p.name} 登录 · 暂未开放
+                </button>
+              ),
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function AccountButton() {
-  const { user, loading, loginEnabled, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [error, setError] = useState("");
   if (loading)
     return (
@@ -97,21 +175,7 @@ export function AccountButton() {
         <Loader2 size={14} />
       </span>
     );
-  if (!user)
-    return (
-      <Button
-        className="account-login"
-        size="sm"
-        variant="outline"
-        nativeButton={false}
-        render={<a href="/api/auth/login" />}
-        disabled={!loginEnabled}
-        title={loginEnabled ? "使用 GitHub 登录" : "GitHub 登录暂未开放"}
-      >
-        <Code2 size={14} />
-        <span>GitHub 登录</span>
-      </Button>
-    );
+  if (!user) return <LoginButton className="account-login pill" />;
   return (
     <div className="account-control">
       <Link
@@ -119,7 +183,9 @@ export function AccountButton() {
         to={user.isOwner ? "/admin" : "/guestbook"}
       >
         {user.isOwner && <ShieldCheck size={14} />}
-        <span>@{user.login}</span>
+        <span>
+          {user.provider === "google" ? "Google 用户" : "@" + user.login}
+        </span>
       </Link>
       <button
         aria-label="退出登录"

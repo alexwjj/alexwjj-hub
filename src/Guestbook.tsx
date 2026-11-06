@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { api, useAuth } from "./account";
-import { GithubAvatar } from "./components/GithubAvatar";
+import { api, useAuth, LoginButton } from "./account";
+import { UserAvatar, AccountIdentity } from "./components/UserAvatar";
 import { Icon, PageHeading } from "./components/hub-ui";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { prepareImage } from "./lib/guestbook-image";
 type Message = {
   id: string;
   user_id: string;
+  avatar_url?: string;
   login: string;
   name: string;
   content: string;
@@ -39,7 +40,7 @@ function MessageEditor({
   onPublished,
   onCancel,
 }: EditorProps) {
-  const { user, loginEnabled, loading } = useAuth();
+  const { user } = useAuth();
   const [images, setImages] = useState<string[]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState<"" | "images" | "publish">("");
@@ -210,14 +211,7 @@ function MessageEditor({
             <Icon name="arrow" size={13} />
           </button>
         ) : (
-          <a
-            className="pill primary"
-            href={loginEnabled ? "/api/auth/login" : undefined}
-            aria-disabled={loading || !loginEnabled}
-          >
-            GitHub 登录后留言
-            <Icon name="github" size={14} />
-          </a>
+          <LoginButton>登录后留言</LoginButton>
         )}
       </div>
       {error && (
@@ -248,28 +242,23 @@ function MessageRow({
   onPreview,
   children,
 }: RowProps) {
-  const { user, loginEnabled } = useAuth();
+  const { user } = useAuth();
   const [reply, setReply] = useState(false),
     [text, setText] = useState(""),
     [error, setError] = useState(""),
     [removing, setRemoving] = useState(false);
   return (
     <article className={m.root_id ? "reply-card" : "glass message-card"}>
-      {!m.deleted && <GithubAvatar id={m.user_id} login={m.login} />}
+      {!m.deleted && (
+        <UserAvatar id={m.user_id} login={m.login} avatar_url={m.avatar_url} />
+      )}
       <div className="message-main">
         {m.deleted ? (
           <p className="muted">这条留言已删除。</p>
         ) : (
           <>
             <div className="message-meta">
-              <a
-                href={`https://github.com/${m.login}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {m.name}
-                <span>@{m.login}</span>
-              </a>
+              <AccountIdentity id={m.user_id} login={m.login} name={m.name} />
               {m.parent_id && (
                 <span className="reply-recipient">回复 {m.reply_to_name}</span>
               )}
@@ -335,13 +324,9 @@ function MessageRow({
                   回复
                 </button>
               ) : (
-                <a
-                  className="text-link message-reply"
-                  href={loginEnabled ? "/api/auth/login" : undefined}
-                  aria-disabled={!loginEnabled}
-                >
+                <LoginButton className="text-link message-reply">
                   登录后回复
-                </a>
+                </LoginButton>
               ))}
             {reply && user && (
               <MessageEditor
@@ -368,7 +353,7 @@ function MessageRow({
   );
 }
 export function Guestbook() {
-  const { user, loginEnabled } = useAuth();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]),
     [text, setText] = useState(""),
     [listError, setListError] = useState(""),
@@ -443,7 +428,7 @@ export function Guestbook() {
         <section className="glass guestbook-compose">
           <div className="flex items-center gap-3">
             {user ? (
-              <GithubAvatar id={user.id} login={user.login} />
+              <UserAvatar {...user} />
             ) : (
               <span className="account-avatar">
                 <Icon name="user" size={17} />
@@ -454,7 +439,7 @@ export function Guestbook() {
                 {user?.name || "访客"}
               </strong>
               <small className="block text-[10px] muted mt-1">
-                {user ? "以当前账号发布" : "使用 GitHub 账号参与交流"}
+                {user ? "以当前账号发布" : "登录后参与交流"}
               </small>
             </div>
             <span className="ml-auto text-[10px] muted flex items-center gap-1.5">
@@ -470,7 +455,7 @@ export function Guestbook() {
           />
           {new URLSearchParams(location.search).get("login") === "failed" && (
             <p className="inline-error" role="alert">
-              GitHub 登录未完成，请重新登录。
+              登录未完成，请重新登录。
             </p>
           )}
         </section>
@@ -529,20 +514,17 @@ export function Guestbook() {
           </span>
           <h2>第一条留言，留给你。</h2>
           <p>这里还很安静。分享一个想法，或先打个招呼。</p>
-          <button
-            className="text-link mt-5"
-            onClick={() => {
-              if (!user) {
-                if (!loginEnabled) return;
-                window.location.assign("/api/auth/login");
-                return;
-              }
-              document.getElementById("message")?.focus();
-            }}
-          >
-            写下第一条留言
-            <Icon name="arrow" size={13} />
-          </button>
+          {user ? (
+            <button
+              className="text-link mt-5"
+              onClick={() => document.getElementById("message")?.focus()}
+            >
+              写下第一条留言
+              <Icon name="arrow" size={13} />
+            </button>
+          ) : (
+            <LoginButton className="text-link mt-5">登录后留言</LoginButton>
+          )}
         </div>
       ) : (
         <div className="messages-list">

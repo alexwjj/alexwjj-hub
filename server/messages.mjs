@@ -45,7 +45,7 @@ function validImage(value) {
     !!imageType(bytes)
   );
 }
-const fields = `m.id::text, m.user_id, m.login, m.name, coalesce(m.content,'') AS content,
+const fields = `m.id::text, m.user_id, m.login, m.name, m.avatar_url, coalesce(m.content,'') AS content,
   m.created_at, m.parent_id::text, m.root_id::text, m.deleted, cardinality(m.images) AS image_count`;
 
 export function getMessages(db) {
@@ -104,9 +104,9 @@ export async function writeMessage(db, method, user, body) {
     `WITH target AS (
     SELECT id,root_id,name FROM hub_messages WHERE id=$5::bigint AND NOT deleted FOR SHARE
   ), inserted AS (
-    INSERT INTO hub_messages(user_id,login,name,content,parent_id,root_id,images)
+    INSERT INTO hub_messages(user_id,login,name,content,parent_id,root_id,images,avatar_url)
     SELECT $1,$2,$3,nullif($4,''),$5::bigint,(SELECT coalesce(root_id,id) FROM target),
-      ARRAY(SELECT decode(value,'base64') FROM jsonb_array_elements_text($6::jsonb))
+      ARRAY(SELECT decode(value,'base64') FROM jsonb_array_elements_text($6::jsonb)), $7
     WHERE $5::bigint IS NULL OR EXISTS (SELECT 1 FROM target)
     RETURNING *
   ) SELECT ${fields},(SELECT name FROM target) AS reply_to_name FROM inserted m`,
@@ -117,6 +117,7 @@ export async function writeMessage(db, method, user, body) {
       content.trim(),
       parent_id,
       JSON.stringify(images),
+      user.avatar_url || "",
     ],
   );
   return row
