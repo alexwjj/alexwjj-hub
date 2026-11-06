@@ -1352,7 +1352,7 @@ function Shell() {
   useEffect(() => {
     if (!accountOpen) return;
     const close = (e: PointerEvent) => {
-      if (e.target instanceof Element && !e.target.closest(".account-row"))
+      if (e.target instanceof Element && !e.target.closest(".toolbar-account"))
         setAccountOpen(false);
     };
     const escape = (e: KeyboardEvent) => {
@@ -1503,63 +1503,6 @@ function Shell() {
             <Icon name="arrow" size={14} className="ml-auto" />
           </OutLink>
         </div>
-        <div className="account-row">
-          {user ? (
-            <>
-              <UserAvatar {...user} />
-              <AccountIdentity {...user} />
-              <button
-                className="icon-button ml-auto"
-                aria-label="账户菜单"
-                aria-expanded={accountOpen}
-                onClick={() => {
-                  setAccountError("");
-                  setAccountOpen((v) => !v);
-                }}
-              >
-                <Icon name="chevrons" size={13} />
-              </button>
-            </>
-          ) : (
-            <LoginButton className="account-login-link">
-              <span className="account-avatar">
-                <Icon name="user" size={17} />
-              </span>
-              登录
-            </LoginButton>
-          )}
-          {accountOpen && user && (
-            <div className="account-menu glass">
-              <>
-                <span className="muted text-xs">
-                  {user.provider === "google"
-                    ? "Google 用户"
-                    : "@" + user.login}
-                </span>
-                {user.isOwner && (
-                  <>
-                    <Link to="/admin">作品数据</Link>
-                    <Link to="/admin?setup=1">接入 SDK</Link>
-                  </>
-                )}
-                <button
-                  onClick={() =>
-                    void logout()
-                      .then(() => setAccountOpen(false))
-                      .catch(() => setAccountError("退出失败，请稍后重试"))
-                  }
-                >
-                  退出登录
-                </button>
-                {accountError && (
-                  <p className="text-[11px] text-destructive" role="alert">
-                    {accountError}
-                  </p>
-                )}
-              </>
-            </div>
-          )}
-        </div>
       </div>
     </>
   );
@@ -1633,13 +1576,60 @@ function Shell() {
                   <Icon name="moon" size={15} />
                 </button>
               </GlassGroup>
-              <OutLink
-                href={profile.github}
-                label="在 GitHub 查看 alexwjj"
-                className="icon-button"
-              >
-                <Icon name="github" size={18} />
-              </OutLink>
+              <div className="toolbar-account">
+                {user ? (
+                  <>
+                    <button
+                      className="toolbar-account-trigger"
+                      aria-label="账户菜单"
+                      aria-expanded={accountOpen}
+                      onClick={() => {
+                        setAccountError("");
+                        setAccountOpen((v) => !v);
+                      }}
+                    >
+                      <UserAvatar {...user} />
+                      <Icon name="down" size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <LoginButton className="pill primary toolbar-login">
+                    登录
+                  </LoginButton>
+                )}
+                {accountOpen && user && (
+                  <div className="account-menu glass">
+                    <>
+                      <AccountIdentity {...user} />
+                      {user.isOwner && (
+                        <>
+                          <Link to="/admin">作品数据</Link>
+                          <Link to="/admin?setup=1">接入 SDK</Link>
+                        </>
+                      )}
+                      <button
+                        onClick={() =>
+                          void logout()
+                            .then(() => setAccountOpen(false))
+                            .catch(() =>
+                              setAccountError("退出失败，请稍后重试"),
+                            )
+                        }
+                      >
+                        退出登录
+                      </button>
+                      {accountError && (
+                        <p
+                          className="text-[11px] text-destructive"
+                          role="alert"
+                        >
+                          {accountError}
+                        </p>
+                      )}
+                    </>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
           <main className="page-content" id="main-content" tabIndex={-1}>

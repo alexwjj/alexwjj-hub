@@ -343,13 +343,40 @@ button svg {
   background: #62656c;
   flex-shrink: 0;
 }
-.account-row {
+.toolbar-account {
+  position: relative;
+  flex-shrink: 0;
+}
+.toolbar-account-trigger {
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-top: 1px solid var(--border);
-  padding: 16px 6px 2px;
-  position: relative;
+  gap: 6px;
+  border-radius: 22px;
+  padding: 3px;
+}
+.toolbar-account-trigger .account-avatar {
+  width: 28px;
+  height: 28px;
+}
+.toolbar-login {
+  height: 34px;
+  padding-inline: 17px;
+}
+.toolbar-account .account-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.toolbar-account .account-identity strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.toolbar-account .account-identity small {
+  font-size: 11px;
+  color: var(--body-text);
 }
 .account-avatar {
   background: #292a2f;
@@ -371,34 +398,11 @@ button svg {
   height: 100%;
   border-radius: inherit;
 }
-.account-login-link {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.account-row strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-}
-.account-row small {
-  display: block;
-  font:
-    10px "IBM Plex Mono",
-    monospace;
-  color: var(--muted-foreground);
-  margin-top: 3px;
-}
 .account-menu {
   position: absolute;
-  bottom: 64px;
-  left: 0;
-  width: 100%;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 210px;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -1737,9 +1741,6 @@ button svg {
   .sidebar-status {
     padding-block: 12px;
   }
-  .account-row {
-    padding-top: 12px;
-  }
 }
 @media (max-height: 730px) and (min-width: 901px) {
   .sidebar {
@@ -1778,9 +1779,6 @@ button svg {
   .sidebar-status > a {
     margin-top: 0;
   }
-  .account-row {
-    padding-top: 10px;
-  }
 }
 @media (max-height: 550px) and (min-width: 901px) {
   .sidebar {
@@ -1804,9 +1802,6 @@ button svg {
   }
   .secondary-nav {
     padding-top: 5px;
-  }
-  .account-row {
-    padding-top: 8px;
   }
   .sidebar-bottom {
     padding-top: 8px;

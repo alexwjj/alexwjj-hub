@@ -132,29 +132,42 @@ export function LoginButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="login-dialog">
           <DialogHeader>
-            <DialogTitle>登录个人空间</DialogTitle>
+            <DialogTitle>登录或注册</DialogTitle>
             <DialogDescription>
-              选择账号后，即可留言、发图和参与回复。
+              使用你的账号，分享作品、发布图片，与大家交流。
             </DialogDescription>
           </DialogHeader>
           <div className="login-providers">
             {(
               [
-                { id: "github", name: "GitHub", href: "/api/auth/login" },
                 {
                   id: "google",
                   name: "Google",
                   href: "/api/auth/google/login",
                 },
+                { id: "github", name: "GitHub", href: "/api/auth/login" },
               ] as const
             ).map((p) =>
               providers[p.id] ? (
                 <a className="pill" href={p.href} key={p.id}>
-                  使用 {p.name} 账号登录
-                  <Icon name="right" size={15} />
+                  <img
+                    className={`provider-logo provider-logo-${p.id}`}
+                    src={`/auth/${p.id}.png`}
+                    width={24}
+                    height={24}
+                    alt=""
+                  />
+                  使用 {p.name} 账号继续
                 </a>
               ) : (
                 <button className="pill" disabled key={p.id}>
+                  <img
+                    className={`provider-logo provider-logo-${p.id}`}
+                    src={`/auth/${p.id}.png`}
+                    width={24}
+                    height={24}
+                    alt=""
+                  />
                   {p.name} 登录 · 暂未开放
                 </button>
               ),

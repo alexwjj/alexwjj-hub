@@ -70,7 +70,7 @@ for (const height of [500, 640, 900]) {
   const m = await p.evaluate(() => ({
     height: document.querySelector(".sidebar").clientHeight,
     content: document.querySelector(".sidebar").scrollHeight,
-    profile: document.querySelector(".account-row").getBoundingClientRect()
+    profile: document.querySelector(".toolbar-account").getBoundingClientRect()
       .bottom,
   }));
   assert(
